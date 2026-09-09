@@ -355,7 +355,6 @@ def style_label_scores(centroid: pd.Series) -> dict[str, float]:
     first_serve_win_pct = float(centroid.get("first_serve_win_pct", 0))
     return_points_won_pct = float(centroid.get("return_points_won_pct", 0))
     return_games_won_pct = float(centroid.get("return_games_won_pct", 0))
-    win_rate = float(centroid.get("win_rate", 0))
     # average_match_length arrives here already standardized (see module note
     # above) -- NOT raw minutes. A previous version of this function divided
     # it by 120 assuming raw minutes (~60-200), which -- given the actual
@@ -468,7 +467,6 @@ def style_label_scores(centroid: pd.Series) -> dict[str, float]:
     if service_aggression > 0 and return_aggression > 0:
         scores["Short-Rally Attacker"] = float(
             min(service_aggression, return_aggression)
-            + 0.25 * win_rate
             - 0.25 * tiebreak_frequency
         )
 
