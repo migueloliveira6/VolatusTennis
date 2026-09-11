@@ -37,9 +37,9 @@
   },
   {
     "surface": "US Open",
-    "total_predictions": 119,
-    "correct": 83,
-    "accuracy": 69.75
+    "total_predictions": 120,
+    "correct": 84,
+    "accuracy": 70.0
   },
   {
     "surface": "Bastad",
