@@ -32,6 +32,7 @@ CHAT_ID = os.getenv('CHAT_ID')
 MODEL_PATH = os.getenv('MODEL_PATH', 'models')
 PREVISOES_PATH = os.getenv('PREVISOES_PATH', 'previsoes')
 NAME_LOOKUP = os.getenv('NAME_LOOKUP', 'notebooks/name_lookup.csv')
+SITE_STATUS_PATH = os.getenv('SITE_STATUS_PATH', os.path.join('docs', 'predicts', 'status.json'))
 # Cache global para nomes de jogadores
 nome_cache = {}
 
@@ -699,11 +700,47 @@ def enviar_telegram(mensagem: str, token: str, chat_id: str) -> bool:
         return False
 
 
+def salvar_status_site(status: str, mensagem: str, data: datetime) -> bool:
+    """Atualiza o estado curto exibido pelo site."""
+    try:
+        import json
+
+        pasta_status = os.path.dirname(SITE_STATUS_PATH)
+        if pasta_status:
+            os.makedirs(pasta_status, exist_ok=True)
+
+        with open(SITE_STATUS_PATH, 'w', encoding='utf-8') as arquivo:
+            json.dump({
+                "status": status,
+                "message": mensagem,
+                "date": data.strftime("%Y-%m-%d")
+            }, arquivo, ensure_ascii=False, indent=2)
+        logger.info(f"✅ Status do site atualizado em '{SITE_STATUS_PATH}'")
+        return True
+    except OSError as e:
+        logger.error(f"❌ Erro ao atualizar status do site: {e}")
+        return False
+
+
+def notificar_sem_jogos(data: datetime) -> Tuple[bool, bool]:
+    """Informa a ausência de jogos no Telegram e no site."""
+    data_formatada = data.strftime("%d/%m/%Y")
+    mensagem = f"Não há jogos de ténis disponíveis para {data_formatada}."
+    telegram_enviado = enviar_telegram(mensagem, TOKEN_BOT, CHAT_ID)
+    status_salvo = salvar_status_site("no_matches", mensagem, data)
+    return telegram_enviado, status_salvo
+
+
 def enviar_resultados_telegram(df: pd.DataFrame, token: str, chat_id: str) -> bool:
     """Envia resultados formatados via Telegram"""
     try:
+        df_telegram = df[pd.to_numeric(df['Valor Aposta'], errors='coerce') > 0]
+        if df_telegram.empty:
+            logger.info("ℹ️ Nenhuma previsão com valor de aposta positivo para enviar ao Telegram")
+            return True
+
         linhas = []
-        for _, row in df.iterrows():
+        for _, row in df_telegram.iterrows():
             valor_aposta = round(row['Valor Aposta'], 3) if pd.notna(row['Valor Aposta']) else 'N/A'
             roi_esperado = round(row['ROI Esperado (%)'], 3) if pd.notna(row['ROI Esperado (%)']) else 'N/A'
             linha = (
@@ -954,6 +991,10 @@ def main():
         
         if not jogos_hoje:
             logger.warning("⚠️ Nenhum jogo encontrado para hoje!")
+            data_jogos = datetime.today() + timedelta(days=1)
+            telegram_enviado, status_salvo = notificar_sem_jogos(data_jogos)
+            logger.info(f"📱 Telegram sem jogos: {'enviado' if telegram_enviado else 'falhou'}")
+            logger.info(f"🌐 Status do site sem jogos: {'salvo' if status_salvo else 'falhou'}")
             return
         
         logger.info(f"✅ {len(jogos_hoje)} torneios encontrados")
@@ -978,6 +1019,16 @@ def main():
                     logger.info(f"  {j.player1} vs {j.player2} — Odds: {j.odd1} / {j.odd2}")
         
         logger.info(f"\n🎾 Total de jogos válidos: {total_jogos}")
+
+        data_jogos = datetime.today() + timedelta(days=1)
+        if total_jogos == 0:
+            logger.warning("⚠️ Nenhum jogo válido encontrado para hoje!")
+            telegram_enviado, status_salvo = notificar_sem_jogos(data_jogos)
+            logger.info(f"📱 Telegram sem jogos: {'enviado' if telegram_enviado else 'falhou'}")
+            logger.info(f"🌐 Status do site sem jogos: {'salvo' if status_salvo else 'falhou'}")
+            return
+
+        salvar_status_site("ready", "Previsões disponíveis.", data_jogos)
         
         # 3. Análise e previsões
         logger.info("\n🔮 Iniciando análise e previsões...")

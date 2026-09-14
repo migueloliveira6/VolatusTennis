@@ -21,16 +21,33 @@ def load_matches_for_training(conn: sqlite3.Connection, start_date: Optional[str
     """Load matches suitable for training and normalize column names expected by existing code.
 
     Returns columns: tourney_date (datetime), winner_name, loser_name, surface,
-    winner_surface_elo, loser_surface_elo
+    winner_surface_elo, loser_surface_elo, and optional tourney_level
     """
-    query = """
+    table_info = pd.read_sql_query("PRAGMA table_info(matches)", conn)
+    available_columns = set(table_info['name'].astype(str).tolist())
+
+    optional_selects = []
+    if 'tourney_level' in available_columns:
+        optional_selects.append("COALESCE(tourney_level, 'UNK') as tourney_level")
+
+    optional_select_sql = ""
+    if optional_selects:
+        optional_select_sql = ",\n        " + ",\n        ".join(optional_selects)
+
+    query = f"""
     SELECT
         tourney_date as tourney_date,
         winner_name as winner_name,
         loser_name as loser_name,
         surface as surface,
+        winner_rank as winner_rank,
+        loser_rank as loser_rank,
+        winner_rank_points as winner_rank_points,
+        loser_rank_points as loser_rank_points,
+        winner_age as winner_age,
+        loser_age as loser_age,
         winner_elo_after as winner_surface_elo,
-        loser_elo_after as loser_surface_elo
+        loser_elo_after as loser_surface_elo{optional_select_sql}
     FROM matches
     WHERE winner_name IS NOT NULL
       AND loser_name IS NOT NULL
