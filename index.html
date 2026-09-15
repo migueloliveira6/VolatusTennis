@@ -1306,13 +1306,15 @@
         window.predictionsReady = new Promise(resolve => { resolvePredictionsReady = resolve; });
 
         // Carregar dados
-        fetch('predicts/predictions.json')
-            .then(r => r.json())
-            .then(data => {
+        Promise.all([
+            fetch('predicts/predictions.json').then(r => r.json()),
+            fetch('predicts/status.json').then(r => r.json()).catch(() => ({ status: 'ready' }))
+        ])
+            .then(([data, status]) => {
                 allMatches = data;
                 populateTournamentFilter(data);
                 renderStats(data);
-                renderPredictions(data);
+                renderPredictions(data, status);
             })
             .catch(() => {
                 document.getElementById('predictions').innerHTML =
@@ -1343,7 +1345,7 @@
             } else {
                 const filtered = allMatches.filter(m => m.Torneio === currentFilter);
                 renderStats(filtered);
-                renderPredictions(filtered);
+                renderPredictions(filtered, { status: 'ready' });
             }
         }
 
@@ -1361,9 +1363,14 @@
             document.getElementById('avgRoi').textContent = avgRoi + '%';
         }
 
-        function renderPredictions(data) {
+        function renderPredictions(data, status = { status: 'ready' }) {
             const container = document.getElementById('predictions');
             
+            if (status.status === 'no_matches') {
+                container.innerHTML = `<p style="text-align: center; color: #999; padding: 40px;">${status.message}</p>`;
+                return;
+            }
+
             if (data.length === 0) {
                 container.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">Nenhum jogo encontrado para este torneio</p>';
                 return;
