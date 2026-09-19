@@ -1,5 +1,11 @@
 [
   {
+    "surface": "Davis Cup",
+    "total_predictions": 21,
+    "correct": 16,
+    "accuracy": 76.19
+  },
+  {
     "surface": "Indian Wells",
     "total_predictions": 75,
     "correct": 57,
