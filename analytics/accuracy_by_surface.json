@@ -1,15 +1,9 @@
 [
   {
     "surface": "Hangzhou",
-    "total_predictions": 7,
-    "correct": 7,
-    "accuracy": 100.0
-  },
-  {
-    "surface": "Chengdu",
-    "total_predictions": 6,
-    "correct": 5,
-    "accuracy": 83.33
+    "total_predictions": 13,
+    "correct": 11,
+    "accuracy": 84.62
   },
   {
     "surface": "Davis Cup",
@@ -58,6 +52,12 @@
     "total_predictions": 121,
     "correct": 85,
     "accuracy": 70.25
+  },
+  {
+    "surface": "Chengdu",
+    "total_predictions": 12,
+    "correct": 8,
+    "accuracy": 66.67
   },
   {
     "surface": "Bastad",
