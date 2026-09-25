@@ -1,11 +1,5 @@
 [
   {
-    "surface": "Hangzhou",
-    "total_predictions": 13,
-    "correct": 11,
-    "accuracy": 84.62
-  },
-  {
     "surface": "Davis Cup",
     "total_predictions": 25,
     "correct": 19,
@@ -22,6 +16,12 @@
     "total_predictions": 28,
     "correct": 21,
     "accuracy": 75.0
+  },
+  {
+    "surface": "Hangzhou",
+    "total_predictions": 22,
+    "correct": 16,
+    "accuracy": 72.73
   },
   {
     "surface": "Gstaad",
@@ -52,12 +52,6 @@
     "total_predictions": 121,
     "correct": 85,
     "accuracy": 70.25
-  },
-  {
-    "surface": "Chengdu",
-    "total_predictions": 12,
-    "correct": 8,
-    "accuracy": 66.67
   },
   {
     "surface": "Bastad",
@@ -160,6 +154,12 @@
     "total_predictions": 31,
     "correct": 18,
     "accuracy": 58.06
+  },
+  {
+    "surface": "Chengdu",
+    "total_predictions": 19,
+    "correct": 11,
+    "accuracy": 57.89
   },
   {
     "surface": "Barcelona",
