@@ -12,16 +12,16 @@
     "accuracy": 76.0
   },
   {
+    "surface": "Hangzhou",
+    "total_predictions": 25,
+    "correct": 19,
+    "accuracy": 76.0
+  },
+  {
     "surface": "Mallorca",
     "total_predictions": 28,
     "correct": 21,
     "accuracy": 75.0
-  },
-  {
-    "surface": "Hangzhou",
-    "total_predictions": 22,
-    "correct": 16,
-    "accuracy": 72.73
   },
   {
     "surface": "Gstaad",
@@ -157,9 +157,9 @@
   },
   {
     "surface": "Chengdu",
-    "total_predictions": 19,
-    "correct": 11,
-    "accuracy": 57.89
+    "total_predictions": 23,
+    "correct": 13,
+    "accuracy": 56.52
   },
   {
     "surface": "Barcelona",
