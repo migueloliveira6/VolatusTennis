@@ -12,12 +12,6 @@
     "accuracy": 76.0
   },
   {
-    "surface": "Hangzhou",
-    "total_predictions": 25,
-    "correct": 19,
-    "accuracy": 76.0
-  },
-  {
     "surface": "Mallorca",
     "total_predictions": 28,
     "correct": 21,
@@ -34,6 +28,12 @@
     "total_predictions": 25,
     "correct": 18,
     "accuracy": 72.0
+  },
+  {
+    "surface": "Hangzhou",
+    "total_predictions": 28,
+    "correct": 20,
+    "accuracy": 71.43
   },
   {
     "surface": "Kitzbühel",
@@ -156,12 +156,6 @@
     "accuracy": 58.06
   },
   {
-    "surface": "Chengdu",
-    "total_predictions": 23,
-    "correct": 13,
-    "accuracy": 56.52
-  },
-  {
     "surface": "Barcelona",
     "total_predictions": 43,
     "correct": 24,
@@ -178,6 +172,12 @@
     "total_predictions": 71,
     "correct": 38,
     "accuracy": 53.52
+  },
+  {
+    "surface": "Chengdu",
+    "total_predictions": 25,
+    "correct": 13,
+    "accuracy": 52.0
   },
   {
     "surface": "Estoril",
