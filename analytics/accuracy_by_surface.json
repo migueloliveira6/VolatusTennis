@@ -18,6 +18,12 @@
     "accuracy": 75.0
   },
   {
+    "surface": "Hangzhou",
+    "total_predictions": 34,
+    "correct": 25,
+    "accuracy": 73.53
+  },
+  {
     "surface": "Gstaad",
     "total_predictions": 33,
     "correct": 24,
@@ -28,12 +34,6 @@
     "total_predictions": 25,
     "correct": 18,
     "accuracy": 72.0
-  },
-  {
-    "surface": "Hangzhou",
-    "total_predictions": 32,
-    "correct": 23,
-    "accuracy": 71.88
   },
   {
     "surface": "Kitzbühel",
@@ -57,6 +57,12 @@
     "surface": "Bastad",
     "total_predictions": 27,
     "correct": 18,
+    "accuracy": 66.67
+  },
+  {
+    "surface": "Tokyo (Japan Open)",
+    "total_predictions": 6,
+    "correct": 4,
     "accuracy": 66.67
   },
   {
@@ -156,6 +162,12 @@
     "accuracy": 58.06
   },
   {
+    "surface": "Chengdu",
+    "total_predictions": 31,
+    "correct": 18,
+    "accuracy": 58.06
+  },
+  {
     "surface": "Barcelona",
     "total_predictions": 43,
     "correct": 24,
@@ -166,12 +178,6 @@
     "total_predictions": 9,
     "correct": 5,
     "accuracy": 55.56
-  },
-  {
-    "surface": "Chengdu",
-    "total_predictions": 29,
-    "correct": 16,
-    "accuracy": 55.17
   },
   {
     "surface": "Miami",
@@ -190,6 +196,12 @@
     "total_predictions": 29,
     "correct": 14,
     "accuracy": 48.28
+  },
+  {
+    "surface": "Beijing",
+    "total_predictions": 7,
+    "correct": 3,
+    "accuracy": 42.86
   },
   {
     "surface": "Marrakech",
