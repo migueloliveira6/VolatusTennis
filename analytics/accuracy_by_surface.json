@@ -1,11 +1,5 @@
 [
   {
-    "surface": "Tokyo (Japan Open)",
-    "total_predictions": 13,
-    "correct": 10,
-    "accuracy": 76.92
-  },
-  {
     "surface": "Davis Cup",
     "total_predictions": 25,
     "correct": 19,
@@ -126,7 +120,19 @@
     "accuracy": 61.76
   },
   {
+    "surface": "Tokyo (Japan Open)",
+    "total_predictions": 23,
+    "correct": 14,
+    "accuracy": 60.87
+  },
+  {
     "surface": "Umag",
+    "total_predictions": 23,
+    "correct": 14,
+    "accuracy": 60.87
+  },
+  {
+    "surface": "Beijing",
     "total_predictions": 23,
     "correct": 14,
     "accuracy": 60.87
@@ -166,12 +172,6 @@
     "total_predictions": 31,
     "correct": 18,
     "accuracy": 58.06
-  },
-  {
-    "surface": "Beijing",
-    "total_predictions": 14,
-    "correct": 8,
-    "accuracy": 57.14
   },
   {
     "surface": "Barcelona",
