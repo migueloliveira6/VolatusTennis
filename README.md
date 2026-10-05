@@ -1,9 +1,9 @@
-# NeuroTennis
+# VolatusTennis
 
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![GitHub Actions](https://img.shields.io/badge/CI/CD-GitHub%20Actions-2088FF.svg)](https://github.com/features/actions)
 [![GitHub Pages](https://img.shields.io/badge/Deploy-GitHub%20Pages-222222.svg)](https://pages.github.com/)
-[![Daily Tennis Predictions](https://github.com/migueloliveira6/NeuroTennis/actions/workflows/predictions.yml/badge.svg)](https://github.com/migueloliveira6/NeuroTennis/actions/workflows/predictions.yml)
+[![Daily Tennis Predictions](https://github.com/migueloliveira6/VolatusTennis/actions/workflows/predictions.yml/badge.svg)](https://github.com/migueloliveira6/VolatusTennis/actions/workflows/predictions.yml)
 
 Um sistema automatizado de previsão de resultados de ténis utilizando Machine Learning, com pipeline CI/CD completa e interface web interativa.
 
@@ -34,7 +34,7 @@ Um sistema automatizado de previsão de resultados de ténis utilizando Machine 
 
 ## Sobre o Projeto
 
-O **NeuroTennis** é um sistema completo de previsão de resultados de ténis que combina:
+O **VolatusTennis** é um sistema completo de previsão de resultados de ténis que combina:
 
 - **Machine Learning**: Modelo XGBoost com sistema de ELO dinâmico por superfície
 - **Web Scraping**: Extração automática de dados de partidas e odds
@@ -113,7 +113,7 @@ O **NeuroTennis** é um sistema completo de previsão de resultados de ténis qu
 │  GitHub Actions │
 │   (Scheduler)   │
 └────────┬────────┘
-         │ Trigger diário (23:00 UTC)
+         │ Trigger diário (22:50 UTC)
          ▼
 ┌─────────────────┐
 │  Scraping Bot   │
@@ -162,8 +162,8 @@ O **NeuroTennis** é um sistema completo de previsão de resultados de ténis qu
 ### Clonar o Repositório
 
 ```bash
-git clone https://github.com/username/neurotennis.git
-cd neurotennis
+git clone https://github.com/username/VolatusTennis.git
+cd volatustennis
 ```
 
 ### Configurar Ambiente Virtual
@@ -227,7 +227,7 @@ python src/model_elo_xgboost.py
 Abra o arquivo `docs/index.html` num browser ou aceda à versão online:
 
 ```
-https://migueloliveira6.github.io/neurotennis/
+https://volatustennis.me
 ```
 
 ### 🔎 Comparar Previsões com Resultados ✅
@@ -365,8 +365,8 @@ Parâmetros otimizados:
 ### Métricas de Performance
 
 ```
-Acurácia: ~63%
-F1-Score: ~0.71
+Accuracy: ~65%
+F1-Score: ~0.65
 Log Loss: ~0.64
 Brier Score: ~0.22
 ```
@@ -419,9 +419,9 @@ Contribuições são bem-vindas! Por favor:
 
 LinkedIn: [LinkedIn](https://www.linkedin.com/in/luis-oliveira6)
 
-Link do Projeto: [https://github.com/migueloliveira6/neurotennis](https://github.com/migueloliveira6/neurotennis)
+Link do Projeto: [https://github.com/migueloliveira6/VolatusTennis](https://github.com/migueloliveira6/VolatusTennis)
 
-Website: [https://migueloliveira6.github.io/NeuroTennis/](https://migueloliveira6.github.io/NeuroTennis/)
+Website: [https://migueloliveira6.github.io/VolatusTennis/](https://migueloliveira6.github.io/VolatusTennis/)
 
 ---
 
