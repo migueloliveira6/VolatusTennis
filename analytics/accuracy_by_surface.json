@@ -54,9 +54,21 @@
     "accuracy": 70.25
   },
   {
+    "surface": "Tokyo (Japan Open)",
+    "total_predictions": 28,
+    "correct": 19,
+    "accuracy": 67.86
+  },
+  {
     "surface": "Bastad",
     "total_predictions": 27,
     "correct": 18,
+    "accuracy": 66.67
+  },
+  {
+    "surface": "Beijing",
+    "total_predictions": 30,
+    "correct": 20,
     "accuracy": 66.67
   },
   {
@@ -72,10 +84,10 @@
     "accuracy": 65.85
   },
   {
-    "surface": "Tokyo (Japan Open)",
-    "total_predictions": 26,
-    "correct": 17,
-    "accuracy": 65.38
+    "surface": "Shanghai",
+    "total_predictions": 20,
+    "correct": 13,
+    "accuracy": 65.0
   },
   {
     "surface": "Madrid",
@@ -85,12 +97,6 @@
   },
   {
     "surface": "Geneva",
-    "total_predictions": 28,
-    "correct": 18,
-    "accuracy": 64.29
-  },
-  {
-    "surface": "Beijing",
     "total_predictions": 28,
     "correct": 18,
     "accuracy": 64.29
