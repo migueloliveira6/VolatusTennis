@@ -84,12 +84,6 @@
     "accuracy": 65.85
   },
   {
-    "surface": "Shanghai",
-    "total_predictions": 32,
-    "correct": 21,
-    "accuracy": 65.62
-  },
-  {
     "surface": "Madrid",
     "total_predictions": 110,
     "correct": 71,
@@ -112,6 +106,12 @@
     "total_predictions": 118,
     "correct": 75,
     "accuracy": 63.56
+  },
+  {
+    "surface": "Shanghai",
+    "total_predictions": 46,
+    "correct": 29,
+    "accuracy": 63.04
   },
   {
     "surface": "Halle",
