@@ -162,16 +162,16 @@
     "accuracy": 59.26
   },
   {
-    "surface": "Shanghai",
-    "total_predictions": 61,
-    "correct": 36,
-    "accuracy": 59.02
-  },
-  {
     "surface": "Munich",
     "total_predictions": 39,
     "correct": 23,
     "accuracy": 58.97
+  },
+  {
+    "surface": "Shanghai",
+    "total_predictions": 77,
+    "correct": 45,
+    "accuracy": 58.44
   },
   {
     "surface": "Washington",
