@@ -126,6 +126,12 @@
     "accuracy": 62.32
   },
   {
+    "surface": "Shanghai",
+    "total_predictions": 89,
+    "correct": 55,
+    "accuracy": 61.8
+  },
+  {
     "surface": "Queen's Club",
     "total_predictions": 34,
     "correct": 21,
@@ -166,12 +172,6 @@
     "total_predictions": 39,
     "correct": 23,
     "accuracy": 58.97
-  },
-  {
-    "surface": "Shanghai",
-    "total_predictions": 77,
-    "correct": 45,
-    "accuracy": 58.44
   },
   {
     "surface": "Washington",
