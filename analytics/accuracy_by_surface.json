@@ -127,9 +127,9 @@
   },
   {
     "surface": "Shanghai",
-    "total_predictions": 89,
-    "correct": 55,
-    "accuracy": 61.8
+    "total_predictions": 97,
+    "correct": 60,
+    "accuracy": 61.86
   },
   {
     "surface": "Queen's Club",
