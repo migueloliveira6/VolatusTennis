@@ -133,9 +133,9 @@
   },
   {
     "surface": "Shanghai",
-    "total_predictions": 105,
-    "correct": 64,
-    "accuracy": 60.95
+    "total_predictions": 109,
+    "correct": 67,
+    "accuracy": 61.47
   },
   {
     "surface": "Umag",

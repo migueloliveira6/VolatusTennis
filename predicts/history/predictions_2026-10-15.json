@@ -1,0 +1,30 @@
+[
+    {
+        "Torneio":"Shanghai",
+        "Jogador 1":"Arthur Gea",
+        "Jogador 2":"Alejandro Davidovich Fokina",
+        "Vencedor Previsto":"Alejandro Davidovich Fokina",
+        "Confiança (%)":57.4,
+        "ELO Diff":-165.8,
+        "H2H":"Igual (sem confrontos anteriores)",
+        "Odd 1":1.97,
+        "Odd 2":1.83,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0610000007,
+        "ROI Esperado (%)":5.0
+    },
+    {
+        "Torneio":"Shanghai",
+        "Jogador 1":"Alexander Zverev",
+        "Jogador 2":"Alex De Minaur",
+        "Vencedor Previsto":"Alexander Zverev",
+        "Confiança (%)":53.6,
+        "ELO Diff":39.4,
+        "H2H":"8-3 (73% para Alexander Zverev)",
+        "Odd 1":1.5,
+        "Odd 2":2.57,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    }
+]
