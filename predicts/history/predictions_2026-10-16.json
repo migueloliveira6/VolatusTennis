@@ -1,0 +1,30 @@
+[
+    {
+        "Torneio":"Shanghai",
+        "Jogador 1":"Daniil Medvedev",
+        "Jogador 2":"Tommy Paul",
+        "Vencedor Previsto":"Daniil Medvedev",
+        "Confiança (%)":63.0,
+        "ELO Diff":117.6,
+        "H2H":"4-1 (80% para Daniil Medvedev)",
+        "Odd 1":1.45,
+        "Odd 2":2.74,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    },
+    {
+        "Torneio":"Shanghai",
+        "Jogador 1":"Rafael Jodar",
+        "Jogador 2":"Casper Ruud",
+        "Vencedor Previsto":"Rafael Jodar",
+        "Confiança (%)":59.0,
+        "ELO Diff":-15.6,
+        "H2H":"Igual (sem confrontos anteriores)",
+        "Odd 1":1.78,
+        "Odd 2":2.03,
+        "Superfície":"Hard",
+        "Valor Aposta":0.063000001,
+        "ROI Esperado (%)":4.9000000954
+    }
+]

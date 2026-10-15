@@ -126,16 +126,16 @@
     "accuracy": 62.32
   },
   {
+    "surface": "Shanghai",
+    "total_predictions": 113,
+    "correct": 70,
+    "accuracy": 61.95
+  },
+  {
     "surface": "Queen's Club",
     "total_predictions": 34,
     "correct": 21,
     "accuracy": 61.76
-  },
-  {
-    "surface": "Shanghai",
-    "total_predictions": 109,
-    "correct": 67,
-    "accuracy": 61.47
   },
   {
     "surface": "Umag",
