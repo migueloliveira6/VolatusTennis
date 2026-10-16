@@ -114,6 +114,12 @@
     "accuracy": 62.86
   },
   {
+    "surface": "Shanghai",
+    "total_predictions": 115,
+    "correct": 72,
+    "accuracy": 62.61
+  },
+  {
     "surface": "Winston Salem",
     "total_predictions": 24,
     "correct": 15,
@@ -124,12 +130,6 @@
     "total_predictions": 69,
     "correct": 43,
     "accuracy": 62.32
-  },
-  {
-    "surface": "Shanghai",
-    "total_predictions": 113,
-    "correct": 70,
-    "accuracy": 61.95
   },
   {
     "surface": "Queen's Club",
