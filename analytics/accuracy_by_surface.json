@@ -108,16 +108,16 @@
     "accuracy": 63.56
   },
   {
+    "surface": "Shanghai",
+    "total_predictions": 117,
+    "correct": 74,
+    "accuracy": 63.25
+  },
+  {
     "surface": "Halle",
     "total_predictions": 35,
     "correct": 22,
     "accuracy": 62.86
-  },
-  {
-    "surface": "Shanghai",
-    "total_predictions": 115,
-    "correct": 72,
-    "accuracy": 62.61
   },
   {
     "surface": "Winston Salem",
