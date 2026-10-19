@@ -294,6 +294,11 @@ class TennisPredictor:
         # Estatísticas por superfície até antes desta partida
         player_stats = self._get_surface_stats_before(player, surface, date)
         opponent_stats = self._get_surface_stats_before(opponent, surface, date)
+        recent_win_diffs = {
+            f'win_last_{window}_diff': self._get_recent_wins(player, date, window)
+            - self._get_recent_wins(opponent, date, window)
+            for window in (3, 5, 10, 25, 50)
+        }
         
         return {
             'date': date,
@@ -302,19 +307,29 @@ class TennisPredictor:
             'elo_diff': player_elo - opponent_elo,
             'player_rank': player_rank,
             'opponent_rank': opponent_rank,
+            'rank_diff': self._pairwise_diff(player_rank, opponent_rank),
             'rank_advantage': opponent_rank - player_rank,
             'player_rank_points': player_rank_points,
             'opponent_rank_points': opponent_rank_points,
+            'rank_points_diff': self._pairwise_diff(player_rank_points, opponent_rank_points),
             'rank_points_advantage': player_rank_points - opponent_rank_points,
             'player_age': player_age,
             'opponent_age': opponent_age,
             'age_diff': player_age - opponent_age,
             'h2h_win_rate': h2h_win_rate,
+            'h2h_diff': 2 * h2h_win_rate - 1,
             'h2h_matches': h2h_total,
             'player_surface_win_rate': player_stats['win_rate'],
             'player_surface_matches': player_stats['total_matches'],
             'opponent_surface_win_rate': opponent_stats['win_rate'],
             'opponent_surface_matches': opponent_stats['total_matches'],
+            'surface_win_rate_diff': self._pairwise_diff(
+                player_stats['win_rate'], opponent_stats['win_rate']
+            ),
+            'surface_matches_diff': self._pairwise_diff(
+                player_stats['total_matches'], opponent_stats['total_matches']
+            ),
+            **recent_win_diffs,
             'surface': surface,
             'tourney_level': str(tourney_level) if pd.notna(tourney_level) else 'UNK',
             'target': target
@@ -358,6 +373,17 @@ class TennisPredictor:
             'win_rate': wins / total if total > 0 else 0.5,
             'total_matches': total
         }
+
+    def _get_recent_wins(self, player, date, window):
+        """Conta vitórias nos últimos jogos do jogador antes da partida."""
+        if player not in self.player_history:
+            return 0
+
+        previous_matches = [
+            match for match in self.player_history[player]
+            if match['date'] < date
+        ]
+        return sum(match['result'] == 'win' for match in previous_matches[-window:])
     
     def _load_historical_data(self):
         """Carrega apenas os dados necessários para previsões"""
@@ -379,6 +405,12 @@ class TennisPredictor:
         player_clean = np.nan if pd.isna(player_value) else float(player_value)
         opponent_clean = np.nan if pd.isna(opponent_value) else float(opponent_value)
         return player_clean, opponent_clean
+
+    def _pairwise_diff(self, player_value, opponent_value):
+        """Calcula uma diferença sem transformar NaNs em valores artificiais."""
+        if pd.isna(player_value) or pd.isna(opponent_value):
+            return np.nan
+        return float(player_value) - float(opponent_value)
 
     def _get_player_profile_value_before(self, player, field, date, default):
         """Obtém o valor mais recente de um atributo do jogador antes de uma data."""
@@ -635,6 +667,11 @@ class TennisPredictor:
         # Stats por superfície
         player1_stats = self._get_surface_stats_before(player1, surface, date)
         player2_stats = self._get_surface_stats_before(player2, surface, date)
+        recent_win_diffs = {
+            f'win_last_{window}_diff': self._get_recent_wins(player1, date, window)
+            - self._get_recent_wins(player2, date, window)
+            for window in (3, 5, 10, 25, 50)
+        }
 
         # Ranking e idade (último valor conhecido antes da data)
         player1_rank = self._get_player_profile_value_before(player1, 'rank', date, default=None)
@@ -651,19 +688,29 @@ class TennisPredictor:
             'opponent_elo': player2_elo,
             'player_rank': player1_rank,
             'opponent_rank': player2_rank,
+            'rank_diff': self._pairwise_diff(player1_rank, player2_rank),
             'rank_advantage': player2_rank - player1_rank,
             'player_rank_points': player1_rank_points,
             'opponent_rank_points': player2_rank_points,
+            'rank_points_diff': self._pairwise_diff(player1_rank_points, player2_rank_points),
             'rank_points_advantage': player1_rank_points - player2_rank_points,
             'player_age': player1_age,
             'opponent_age': player2_age,
             'age_diff': player1_age - player2_age,
             'h2h_win_rate': h2h_win_rate,
+            'h2h_diff': 2 * h2h_win_rate - 1,
             'h2h_matches': h2h_total,
             'player_surface_win_rate': player1_stats['win_rate'],
             'player_surface_matches': player1_stats['total_matches'],
             'opponent_surface_win_rate': player2_stats['win_rate'],
             'opponent_surface_matches': player2_stats['total_matches'],
+            'surface_win_rate_diff': self._pairwise_diff(
+                player1_stats['win_rate'], player2_stats['win_rate']
+            ),
+            'surface_matches_diff': self._pairwise_diff(
+                player1_stats['total_matches'], player2_stats['total_matches']
+            ),
+            **recent_win_diffs,
             'surface': surface,
             'tourney_level': str(tourney_level) if tourney_level is not None else 'UNK'
         }
