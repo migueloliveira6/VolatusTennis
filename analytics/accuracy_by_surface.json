@@ -54,12 +54,6 @@
     "accuracy": 70.25
   },
   {
-    "surface": "Lyon",
-    "total_predictions": 13,
-    "correct": 9,
-    "accuracy": 69.23
-  },
-  {
     "surface": "Tokyo (Japan Open)",
     "total_predictions": 29,
     "correct": 20,
@@ -108,12 +102,6 @@
     "accuracy": 63.64
   },
   {
-    "surface": "Brussels",
-    "total_predictions": 11,
-    "correct": 7,
-    "accuracy": 63.64
-  },
-  {
     "surface": "Rome",
     "total_predictions": 118,
     "correct": 75,
@@ -124,12 +112,6 @@
     "total_predictions": 35,
     "correct": 22,
     "accuracy": 62.86
-  },
-  {
-    "surface": "Almaty",
-    "total_predictions": 16,
-    "correct": 10,
-    "accuracy": 62.5
   },
   {
     "surface": "Shanghai",
@@ -148,6 +130,12 @@
     "total_predictions": 69,
     "correct": 43,
     "accuracy": 62.32
+  },
+  {
+    "surface": "Almaty",
+    "total_predictions": 21,
+    "correct": 13,
+    "accuracy": 61.9
   },
   {
     "surface": "Queen's Club",
@@ -192,10 +180,22 @@
     "accuracy": 58.97
   },
   {
+    "surface": "Brussels",
+    "total_predictions": 17,
+    "correct": 10,
+    "accuracy": 58.82
+  },
+  {
     "surface": "Washington",
     "total_predictions": 31,
     "correct": 18,
     "accuracy": 58.06
+  },
+  {
+    "surface": "Lyon",
+    "total_predictions": 21,
+    "correct": 12,
+    "accuracy": 57.14
   },
   {
     "surface": "Barcelona",
