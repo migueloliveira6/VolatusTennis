@@ -401,7 +401,7 @@ class SuperficieDetector:
                 "los cabos", "san diego", "winston salem", "new york", "acapulco",
                 "australian open", "atp finals", "masters cup", "davis cup finals",
                 "laver cup", "hopman cup", "atp cup", "united cup", "doha", "dubai",
-                "chengdu", "hangzhou", "almaty", "stockholm", "brussels", "metz",
+                "chengdu", "hangzhou", "almaty", "stockholm", "brussels","lyon", "metz",
                 "rotterdam", "basel", "vienna", "paris", "athens", "sydney", "next gen finals"
             },
             "patterns": [
@@ -413,7 +413,7 @@ class SuperficieDetector:
         "Clay": {
             "torneios": {
                 "french open", "roland garros", "monte carlo", "rome", "madrid",
-                "barcelona", "hamburg", "munich", "estoril", "geneva", "lyon",
+                "barcelona", "hamburg", "munich", "estoril", "geneva",
                 "bucharest", "budapest", "umag", "gstaad", "bastad", "kitzbühel",
                 "casablanca", "marrakech", "houston", "charleston", "bogota", "buenos aires",
                 "santiago", "rio de janeiro"

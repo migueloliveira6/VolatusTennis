@@ -6,6 +6,23 @@
     <link rel="icon" href="https://migueloliveira6.github.io/VolatusTennis/Volatustennis.png?v=2" type="image/png">
     <title>VolatusTennis - Previsões</title>
     <style>
+
+        /* ==================== BASE ==================== */
+        :root {
+            --bg: #0c0b14;
+            --surface: #13111d;
+            --surface-2: #1b1829;
+            --line: #2a2640;
+            --text: #f2f0fa;
+            --muted: #a9a4c4;
+            --accent: #a78bfa;
+            --hard: #5b9cff;
+            --clay: #e8884a;
+            --grass: #5fcf80;
+            --pos: #4ade80;
+            --neg: #f87171;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -21,11 +38,10 @@
 
         body {
             font-family: 'Sakana', sans-serif;
-            background: linear-gradient(120deg, #000000 15%, #784ba5 100%);
             color: #333;
             min-height: 100vh;
             padding: 20px;
-            /* cursor: url(https://cdn.custom-cursor.com/db/pointer/32/Tennis_Pointer.png), auto; */
+            background: var(--bg);
         }
 
         .container {
@@ -40,25 +56,38 @@
             font-family: 'Sakana', sans-serif;
         }
 
+        h2 {
+            color: #ffffff;
+            margin: 30px 0 20px 0;
+            font-size: 1.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        /* ==================== NAVEGAÇÃO ==================== */
         .navbar {
-            background: rgba(0, 0, 0, 0.4);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 15px 25px;
             margin-bottom: 30px;
             display: flex;
-            justify-content: center;
             align-items: center;
             flex-wrap: wrap;
             gap: 20px;
-            border: 2px solid rgba(118, 75, 162, 0.3);
-        }
-
-        .nav-brand h1 {
-            font-size: 2em;
-            color: #a466ea;
-            margin: 0;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            background: none;
+            backdrop-filter: none;
+            border: 0;
+            border-bottom: 1px solid var(--line);
+            border-radius: 0;
+            padding: 0 0 12px;
+            justify-content: space-between;
         }
 
         .nav-tabs {
@@ -67,37 +96,55 @@
         }
 
         .nav-tab {
-            padding: 13px 9px;
-            border: 2px solid transparent;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.7);
-            font-family: 'Sakana', sans-serif;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             gap: 2px;
+            min-height: 55px;
+            padding: 0 14px;
+            border: 0;
+            border-bottom: 2px solid transparent;
+            border-radius: 0;
+            background: none;
+            font: 500 15px 'Sakana', sans-serif;
+            color: var(--muted);
         }
 
         .nav-tab:hover {
-            background: rgba(118, 75, 162, 0.2);
-            color: #ffffff;
-            border-color: #764ba2;
+            background: none;
+            color: #fff;
+            border-color: transparent;
+            border-bottom-color: var(--line);
         }
 
         .nav-tab.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff;
-            border-color: #a466ea;
-            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+            background: none;
+            box-shadow: none;
+            color: #fff;
+            border-color: transparent;
+            border-bottom-color: var(--accent);
         }
 
-        .tab-icon {
-            font-size: 1.2em;
+        .nav-logo {
+            font: 700 22px 'Sakana', sans-serif;
+            letter-spacing: .03em;
+            color: #fff;
         }
 
-        /* ==================== TABS CONTENT ==================== */
+        .nav-logo span {
+            color: var(--accent);
+        }
+
+        .flt:focus-visible,
+        .nav-tab:focus-visible,
+        .surface-tab:focus-visible,
+        .player-search-result:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* ==================== SEPARADORES ==================== */
         .tab-content {
             display: none;
         }
@@ -113,26 +160,19 @@
             to { opacity: 1; transform: translateX(0); }
         }
 
-        @media (prefers-reduced-motion: reduce) {
-            .tab-content.active {
-                animation: none;
-            }
-        }
-
-        /* ==================== STATS HEADER ==================== */
+        /* ==================== ESTATÍSTICAS E COMPONENTES PARTILHADOS ==================== */
         .stats-header {
-            text-align: center;
             color: #ffffff;
-            margin-bottom: 30px;
+            text-align: left;
+            margin: 32px 0 20px;
         }
 
         .stats-header h2 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            color: #a466ea;
+            margin: 0;
+            font: 700 36px 'Sakana', sans-serif;
+            color: var(--text);
         }
 
-        /* ==================== STAT VALUES ==================== */
         .stat-positive {
             color: #00c853 !important;
         }
@@ -141,69 +181,66 @@
             color: #ff5252 !important;
         }
 
-        /* ==================== PROGRESS BAR ==================== */
         .accuracy-progress-card {
-            margin: 20px 0 30px;
+            margin: 0 0 20px;
             padding: 20px;
-            border-radius: 12px;
-            border: 2px solid #764ba2;
-            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: var(--surface);
         }
 
         .progress-header {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
-            color: #ffffff;
-            font-weight: 600;
+            align-items: baseline;
+            margin-bottom: 12px;
+            font: 500 14px 'Sakana', sans-serif;
+            color: var(--muted);
         }
 
         .progress-bar {
             width: 100%;
-            height: 14px;
-            background: rgba(255, 255, 255, 0.1);
             border-radius: 999px;
             overflow: hidden;
+            height: 10px;
+            background: var(--line);
         }
 
         .progress-fill {
             height: 100%;
             width: 0%;
-            background: linear-gradient(90deg, #00c853, #69f0ae);
             transition: width 0.8s ease-out;
-            box-shadow: 0 0 10px rgba(0, 200, 83, 0.5);
+            background: var(--accent);
+            box-shadow: none;
         }
 
-        /* ==================== CHARTS ==================== */
         .charts-section {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
         .chart-card {
-            padding: 25px;
-            border-radius: 12px;
-            border: 2px solid #764ba2;
-            background: rgba(0, 0, 0, 0.3);
             color: #ffffff;
-            /* Fix height to avoid charts growing indefinitely */
             min-height: 240px;
             max-height: 320px;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             overflow: hidden;
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: var(--surface);
         }
 
         .chart-card h3 {
-            margin-bottom: 15px;
-            color: #a466ea;
-            font-size: 1.3em;
+            margin: 0 0 14px;
+            font: 600 16px 'Sakana', sans-serif;
+            color: var(--text);
         }
 
-        /* Ensure canvas has fixed visual height and does not expand layout */
         .chart-card canvas {
             width: 100% !important;
             height: 200px !important;
@@ -211,118 +248,112 @@
             object-fit: contain;
         }
 
-        /* ==================== TOP 10 E TENDÊNCIAS ==================== */
         .surface-tabs {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
             flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
         }
 
         .surface-tab {
-            padding: 12px 20px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            color: rgba(255, 255, 255, 0.7);
-            font-family: 'Sakana', sans-serif;
-            font-size: 1rem;
             cursor: pointer;
             transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+            padding: 0 18px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: none;
+            color: #cfcbe6;
+            font: 500 14px 'Sakana', sans-serif;
+            box-shadow: none;
         }
 
         .surface-tab:hover {
-            background: rgba(118, 75, 162, 0.2);
-            border-color: #764ba2;
-            color: #ffffff;
+            background: none;
+            border-color: var(--accent);
+            color: #fff;
         }
 
         .surface-tab.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #ffffff;
-            border-color: #a466ea;
-            box-shadow: 0 4px 15px rgba(118, 75, 162, 0.4);
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #14101f;
+            font-weight: 700;
+            box-shadow: none;
         }
 
         .top10-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 10px;
+            margin-top: 0;
         }
 
         .player-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(118, 75, 162, 0.3);
+            display: grid;
+            grid-template-columns: 32px 1fr auto;
+            grid-template-areas: "r n e" "r n l";
+            align-items: center;
+            column-gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
             border-radius: 12px;
-            padding: 15px;
-            text-align: center;
-            transition: all 0.3s ease;
+            background: var(--surface);
+            text-align: left;
+            transition: border-color .2s;
         }
 
         .player-card:hover {
-            background: rgba(118, 75, 162, 0.15);
-            border-color: #764ba2;
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(118, 75, 162, 0.2);
+            background: var(--surface);
+            border-color: #4a4470;
+            transform: none;
+            box-shadow: none;
         }
 
         .player-rank {
-            display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            width: 35px;
-            height: 35px;
-            border-radius: 50%;
-            line-height: 35px;
-            font-weight: bold;
-            margin-bottom: 10px;
+            grid-area: r;
+            display: block;
+            width: auto;
+            height: auto;
+            margin: 0;
+            border-radius: 0;
+            background: none;
+            font: 700 20px 'Sakana', sans-serif;
+            color: var(--muted);
         }
 
         .player-name-card {
             color: #ffffff;
-            font-size: 1.1em;
-            font-weight: bold;
-            margin: 10px 0;
             word-break: break-word;
+            grid-area: n;
+            margin: 0;
+            font: 600 16px 'Sakana', sans-serif;
         }
 
         .player-elo {
-            color: #a466ea;
-            font-size: 1.4em;
-            font-weight: bold;
+            grid-area: e;
+            text-align: right;
+            font: 700 20px 'Sakana', sans-serif;
+            color: #9078f1;
         }
 
         .player-elo-label {
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.85em;
-            margin-top: 5px;
-        }
-
-        h2 {
-            color: #ffffff;
-            margin: 30px 0 20px 0;
-            font-size: 1.5em;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            grid-area: l;
+            margin: 0;
+            text-align: right;
+            font-size: 12px;
+            color: var(--muted);
         }
 
         .section {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(118, 75, 162, 0.15);
             border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 25px;
-        }
-
-        h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .subtitle {
-            font-size: 1.2em;
-            opacity: 0.9;
+            padding: 0;
+            border: 0;
+            background: none;
+            margin-bottom: 32px;
         }
 
         .stats-grid {
@@ -351,53 +382,108 @@
             margin-bottom: 5px;
         }
 
+        .stats-header .subtitle {
+            margin-top: 6px;
+            font: 400 16px 'Sakana', sans-serif;
+            color: var(--muted);
+            opacity: 1;
+        }
+
+        #tab-estatisticas .stat-value.stat-positive {
+            color: var(--pos) !important;
+        }
+
+        #tab-estatisticas .stat-value.stat-negative {
+            color: var(--neg) !important;
+        }
+
+        .progress-header span:last-child {
+            font: 700 28px 'Sakana', sans-serif;
+            color: var(--text);
+        }
+
+        .section h2 {
+            margin: 0 0 16px;
+            font: 700 22px 'Sakana', sans-serif;
+            color: var(--text);
+        }
+
+        .surface-tab::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--muted);
+        }
+
+        .surface-tab[data-surface="hard"]::before {
+            background: var(--hard);
+        }
+
+        .surface-tab[data-surface="clay"]::before {
+            background: var(--clay);
+        }
+
+        .surface-tab[data-surface="grass"]::before {
+            background: var(--grass);
+        }
+
+        .surface-tab.active::before {
+            box-shadow: 0 0 0 2px #14101f;
+        }
+
+        .player-card:nth-child(-n+3) .player-rank {
+            color: var(--accent);
+        }
+
+        /* ==================== CLUSTERING ==================== */
         .cluster-meta-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-            gap: 16px;
-            margin-bottom: 25px;
-            text-align: center;
+            gap: 12px;
+            margin-bottom: 20px;
+            text-align: left;
         }
 
         .cluster-meta-card {
-            padding: 18px;
-            border-radius: 12px;
-            border: 2px solid rgba(118, 75, 162, 0.35);
-            background: rgba(0, 0, 0, 0.28);
             color: #ffffff;
+            padding: 16px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--surface);
         }
 
         .cluster-meta-card h3 {
-            color: #a466ea;
-            margin-bottom: 10px;
-            font-size: 1.1em;
+            margin: 0 0 6px;
+            font: 500 14px 'Sakana', sans-serif;
+            color: var(--muted);
         }
 
         .cluster-meta-value {
-            font-size: 2em;
-            font-weight: bold;
-            color: #ffffff;
+            font: 700 28px 'Sakana', sans-serif;
+            color: var(--text);
+            overflow-wrap: anywhere;
         }
 
         .cluster-meta-subtitle {
-            color: rgba(255, 255, 255, 0.7);
             margin-top: 4px;
             font-size: 0.95em;
+            color: var(--muted);
         }
 
         .cluster-card-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 16px;
-            margin-top: 20px;
+            gap: 12px;
+            margin-top: 0;
         }
 
         .cluster-card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(118, 75, 162, 0.3);
-            border-radius: 12px;
-            padding: 18px;
             color: #ffffff;
+            padding: 16px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--surface);
         }
 
         .cluster-card-header {
@@ -412,23 +498,25 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            min-width: 42px;
-            height: 42px;
             padding: 0 12px;
             border-radius: 999px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: #ffffff;
             font-weight: bold;
+            min-width: 40px;
+            height: 40px;
+            border: 1px solid var(--accent);
+            background: #1f1a38;
+            font-family: 'Sakana', sans-serif;
         }
 
         .cluster-style {
-            color: #a466ea;
-            font-weight: bold;
             text-align: right;
+            font: 700 17px 'Sakana', sans-serif;
+            color: var(--text);
         }
 
         .cluster-card small {
-            color: rgba(255, 255, 255, 0.65);
+            color: var(--muted);
         }
 
         .chip-list {
@@ -451,17 +539,18 @@
 
         .cluster-toolbar {
             display: flex;
-            gap: 14px;
-            align-items: center;
             flex-wrap: wrap;
-            margin-bottom: 22px;
-            justify-content: center;
+            flex-direction: column;
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: 8px;
+            max-width: 480px;
+            margin-bottom: 16px;
         }
 
         .cluster-toolbar label {
-            color: #ffffff;
-            font-weight: 600;
-            font-size: 1.5em;
+            font: 500 14px 'Sakana', sans-serif;
+            color: var(--muted);
         }
 
         .cluster-toolbar select {
@@ -483,15 +572,15 @@
         #playerSearch {
             width: 100%;
             min-width: 280px;
-            padding: 12px 42px 12px 15px;
-            border-radius: 12px;
-            border: 1px solid rgba(118, 75, 162, 0.5);
-            background: rgba(0, 0, 0, 0.35);
-            color: #ffffff;
-            font-family: 'Sakana', sans-serif;
-            font-size: 1rem;
             outline: none;
             transition: all 0.25s ease;
+            min-height: 44px;
+            padding: 0 42px 0 16px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--surface);
+            color: var(--text);
+            font: 400 15px 'Sakana', sans-serif;
         }
 
         #playerSearch::placeholder {
@@ -499,8 +588,9 @@
         }
 
         #playerSearch:focus {
-            border-color: #a466ea;
-            box-shadow: 0 0 0 3px rgba(164, 102, 234, 0.15);
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(167, 139, 250, .2);
         }
 
         .clear-player-search {
@@ -528,12 +618,12 @@
             right: 0;
             max-height: 280px;
             overflow-y: auto;
-            background: rgba(15, 10, 20, 0.98);
-            border: 1px solid rgba(118, 75, 162, 0.5);
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             z-index: 1000;
             display: none;
+            background: var(--surface-2);
+            border: 1px solid var(--line);
         }
 
         .player-search-results.active {
@@ -545,16 +635,17 @@
             color: #ffffff;
             cursor: pointer;
             transition: background 0.15s ease;
+            font-family: 'Sakana', sans-serif;
         }
 
         .player-search-result:hover {
-            background: rgba(118, 75, 162, 0.3);
+            background: #26213a;
         }
 
         .player-search-result.all-players {
-            color: #a466ea;
             font-weight: bold;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            color: var(--accent);
         }
 
         .player-search-no-results {
@@ -562,31 +653,11 @@
             color: rgba(255, 255, 255, 0.55);
         }
 
-        @media (max-width: 768px) {
-            .cluster-toolbar {
-                align-items: stretch;
-                flex-direction: column;
-            }
-
-            .cluster-toolbar label {
-                font-size: 1.2em;
-            }
-
-            .player-search-wrapper {
-                width: 100%;
-                min-width: 0;
-            }
-
-            #playerSearch {
-                min-width: 0;
-            }
-        }
-
         .cluster-chart-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-            gap: 20px;
             margin-bottom: 25px;
+            gap: 16px;
         }
 
         .cluster-chart-grid .chart-card {
@@ -610,186 +681,84 @@
         .player-summary-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px;
-            margin-top: 18px;
-            margin-bottom: 25px;
+            gap: 12px;
+            margin: 0 0 20px;
         }
 
         .player-summary-card {
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid rgba(118, 75, 162, 0.3);
-            background: rgba(255, 255, 255, 0.04);
             color: #ffffff;
+            padding: 14px 16px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--surface);
         }
 
         .player-summary-card h4 {
-            color: #a466ea;
-            margin-bottom: 8px;
+            margin: 0 0 6px;
+            font: 500 13px 'Sakana', sans-serif;
+            color: var(--muted);
         }
 
         .player-summary-card .summary-value {
-            font-size: 1.5em;
-            font-weight: bold;
-            color: #ffffff;
+            font: 700 22px 'Sakana', sans-serif;
+            color: var(--text);
         }
 
+        #tab-estatisticas .stats-grid,
+        #tab-clustering .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        #tab-estatisticas .stat-card,
+        #tab-clustering .stat-card {
+            display: flex;
+            flex-direction: column-reverse;
+            padding: 14px 16px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: var(--surface);
+            text-align: left;
+        }
+
+        #tab-estatisticas .stat-value,
+        #tab-clustering .stat-value {
+            font: 700 28px 'Sakana', sans-serif;
+            color: var(--text);
+            overflow-wrap: anywhere;
+        }
+
+        #tab-clustering .stat-value {
+            font-size: 24px;
+        }
+
+        #tab-estatisticas .stat-label,
+        #tab-clustering .stat-label {
+            margin: 0;
+            font: 500 12px 'Sakana', sans-serif;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .cluster-card .chip {
+            border: 1px solid rgba(74, 222, 128, .35);
+            background: var(--surface-2);
+            color: var(--text);
+            font: 13px 'Sakana', sans-serif;
+        }
+
+        .cluster-card .chip-list + .chip-list .chip {
+            border-color: rgba(248, 113, 113, .35);
+        }
+
+        /* ==================== PREVISÕES ==================== */
         .predictions-container {
             border-radius: 12px;
             border: #764ba2 2px solid;
             padding: 30px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .predictions-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            margin-left: 3rem;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .predictions-header h2 {
-            margin: 0;
-            color: #764ba2;
-        }
-
-        .filter-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .filter-container label {
-            font-weight: 600;
-            color: #764ba2;
-            font-size: 0.95em;
-        }
-
-        #tournamentFilter {
-            padding: 8px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            background: #ffffff;
-            font-size: 0.95em;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            min-width: 200px;
-        }
-
-        #tournamentFilter:hover {
-            border-color: #667eea;
-        }
-
-        #tournamentFilter:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-
-        .match-card {
-            border-radius: 8px;
-            padding: 20px;
-            margin-bottom: 15px;
-            transition: all 0.3s ease;
-        }
-
-        .match-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            border-color: #667eea;
-        }
-
-        .match-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .players-section {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin: 15px 0;
-            gap: 15px;
-        }
-
-        .player-name {
-            flex: 1;
-            font-size: 1.1em;
-            font-weight: 600;
-            padding: 12px;
-            background: linear-gradient(135deg, #722233 0%, #c5010b 100%);
-            color: #ffffff;
-            border-radius: 20px;
-            border: 3px solid #af4a43;
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .player-name.predicted-winner {
-            background: linear-gradient(100deg, #226d28 0%, #2ed336 100%);
-            border: 3px solid #317a34;
-            font-weight: bold;
-            color: #ffffff;
-        }
-
-        .vs-divider {
-            font-size: 0.9em;
-            font-weight: bold;
-            color: #999;
-            padding: 0 5px;
-        }
-
-        .winner-badge {
-            background: linear-gradient(90deg, #000000 20%, #7c51a8 100%);
-            color: rgb(255, 255, 255);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.9em;
-        }
-
-        .match-details {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .detail-item {
-            /*background: #f8f9fa;*/
-            padding: 10px;
-            border-radius: 6px;
-            border: 2px solid #764ba2;
-        }
-
-        .detail-label {
-            font-size: 0.8em;
-            color: #ffffff;
-            margin-bottom: 3px;
-        }
-
-        .detail-value {
-            font-weight: bold;
-            color: #ffffff;
-        }
-
-        .confidence-bar {
-            width: 100%;
-            height: 8px;
-            background: #e0e0e0;
-            border-radius: 4px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-
-        .confidence-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.5s ease;
         }
 
         .loading {
@@ -799,88 +768,287 @@
             font-size: 1.2em;
         }
 
-        .tournament-badge {
-            display: inline-block;
-            background: #421b4e;
-            padding: 4px 12px;
+        #tab-previsoes header {
+            text-align: left;
+            margin: 32px 0 20px;
+        }
+
+        #tab-previsoes header h1 {
+            font: 700 36px 'Sakana', sans-serif;
+            margin: 0;
+        }
+
+        #tab-previsoes .subtitle {
+            font: 400 16px 'Sakana', sans-serif;
+            color: var(--muted);
+            opacity: 1;
+            margin-top: 6px;
+        }
+
+        #tab-previsoes .stats-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        #tab-previsoes .stat-card:nth-child(3) {
+            display: none;
+        }
+
+        #tab-previsoes .stat-card {
+            display: flex;
+            flex-direction: column-reverse;
+            padding: 14px 16px;
+            border: 1px solid var(--line);
             border-radius: 12px;
-            font-size: 0.85em;
-            color: #ffffff;
-            margin-right: 10px;
+            background: var(--surface);
+            text-align: left;
         }
 
-        .roi-positive {
-            color: #10b981;
-            font-weight: bold;
+        #tab-previsoes .stat-value {
+            font: 700 28px 'Sakana', sans-serif;
+            color: var(--text);
         }
 
-        .roi-negative {
-            color: #ef4444;
+        #tab-previsoes .stat-label {
+            font: 500 12px 'Sakana', sans-serif;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin: 0;
         }
 
-        .valor_positive {
-            color: #10b981;
-            font-weight: bold;
+        #tab-previsoes .predictions-container {
+            border: 0;
+            padding: 0;
+            box-shadow: none;
         }
 
-        .valor-negative {
-            color: #ef4444;
+        .chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
         }
 
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 2em;
-            }
-
-            .match-details {
-                grid-template-columns: 1fr;
-            }
-
-            .players-section {
-                flex-direction: column;
-                gap: 10px;
-            }
-
-            .vs-divider {
-                transform: rotate(90deg);
-            }
-
-            .player-name {
-                width: 100%;
-            }
-
-            .predictions-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .filter-container {
-                width: 100%;
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            #tournamentFilter {
-                width: 100%;
-            }
+        .flt {
+            min-height: 44px;
+            padding: 0 18px;
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: none;
+            color: #cfcbe6;
+            font: 500 14px 'Sakana', sans-serif;
+            cursor: pointer;
+            transition: border-color .2s, background .2s;
         }
 
+        .flt:hover {
+            border-color: var(--accent);
+        }
+
+        .flt.on {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #14101f;
+            font-weight: 700;
+        }
+
+        #predictions {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(min(100%, 460px), 1fr));
+            gap: 16px;
+        }
+
+        #predictions.loading {
+            display: block;
+            color: var(--muted);
+        }
+
+        #predictions > .mx-empty {
+            grid-column: 1 / -1;
+            padding: 40px 0;
+            text-align: center;
+            color: var(--muted);
+            font-family: 'Sakana', sans-serif;
+        }
+
+        .mx {
+            padding: 20px;
+            border: 1px solid var(--line);
+            border-radius: 16px;
+            background: var(--surface);
+            color: var(--text);
+            font-family: 'Sakana', sans-serif;
+            transition: border-color .2s;
+        }
+
+        .mx:hover {
+            border-color: #4a4470;
+        }
+
+        .mx-m {
+            font-size: 12px;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        .mx-top {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mx-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            margin-right: 8px;
+            border-radius: 50%;
+        }
+
+        .mx-conf b {
+            font: 700 26px 'Sakana', sans-serif;
+        }
+
+        .mx-players {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 14px;
+        }
+
+        .mx-p {
+            min-width: 0;
+            padding: 14px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            background: var(--surface-2);
+        }
+
+        .mx-p.win {
+            border-color: var(--accent);
+            background: #1f1a38;
+        }
+
+        .mx-p .tag {
+            min-height: 1.2em;
+            color: var(--accent);
+        }
+
+        .mx-p .n {
+            margin: 2px 0 6px;
+            font: 600 18px 'Sakana', sans-serif;
+            color: var(--muted);
+            overflow-wrap: anywhere;
+        }
+
+        .mx-p.win .n {
+            color: #fff;
+            font-weight: 700;
+        }
+
+        .mx-bar {
+            display: flex;
+            height: 10px;
+            margin-top: 14px;
+            border-radius: 999px;
+            overflow: hidden;
+            background: var(--line);
+        }
+
+        .mx-bar i {
+            display: block;
+            background: #4a4470;
+        }
+
+        .mx-bar i.w {
+            background: var(--accent);
+        }
+
+        .mx-bar-l {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .mx-tiles {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 16px;
+        }
+
+        .mx-t {
+            min-width: 0;
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+        }
+
+        .mx-t b {
+            display: block;
+            margin-top: 4px;
+            font: 600 18px 'Sakana', sans-serif;
+            color: var(--text);
+            overflow-wrap: anywhere;
+        }
+
+        .mx-t b.sm {
+            font-size: 14px;
+        }
+
+        .mx-t b.pos {
+            color: var(--pos);
+        }
+
+        .mx-t b.neg {
+            color: var(--neg);
+        }
+
+        .mx-t b.zero {
+            color: #ab4545;
+        }
+
+        .mx-note {
+            margin: 14px 0 0;
+            font-size: 14px;
+            line-height: 1.5;
+            color: var(--muted);
+        }
+
+        .mx-foot {
+            margin: 24px 0 0;
+            font: 13px 'Sakana', sans-serif;
+            color: var(--muted);
+        }
+
+        /* ==================== ECRÃ DE LOADING ==================== */
         .loading-screen {
             position: fixed;
             inset: 0;
             z-index: 9999;
             display: grid;
             place-items: center;
-            background: linear-gradient(120deg, #000000 15%, #784ba5 100%);
+            background: radial-gradient(60% 50% at 50% 42%, rgba(167, 139, 250, 0.16), transparent 70%), #0c0b14;
             font-family: 'Sakana', sans-serif;
         }
 
         .loading-screen.is-hidden {
             pointer-events: none;
-            animation: radialWipe 0.5s cubic-bezier(0.76, 0, 0.24, 1) forwards;
+            animation: radialWipe 0.45s cubic-bezier(0.76, 0, 0.24, 1) forwards;
         }
 
         .loading-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 28px;
+            padding: 0 20px;
             color: #ffffff;
             text-align: center;
         }
@@ -890,41 +1058,61 @@
             align-items: center;
             justify-content: center;
             gap: 16px;
-            margin-bottom: 22px;
-        }
-
-        .loading-content h1 {
-            color: #a466ea;
-            font-size: clamp(2.4rem, 5vw, 3.4rem);
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            opacity: 0;
-            transform: translateX(-36px);
-            animation: textSlideIn 1s cubic-bezier(0.22, 1, 0.36, 1) 1s forwards;
         }
 
         .loading-logo {
-            width: 72px;
-            height: 72px;
-            border-radius: 20px;
-            filter: drop-shadow(0 0 18px rgba(164, 102, 234, 0.6));
+            width: 64px;
+            height: 64px;
+            border-radius: 18px;
+            filter: drop-shadow(0 0 20px rgba(167, 139, 250, 0.45));
             opacity: 0;
-            transform: scale(0.5);
-            animation: logoIntro 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
-                       logoPulse 1.8s ease-in-out 1s infinite;
+            transform: scale(0.6);
+            animation: logoIntro 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .loading-content h1 {
+            margin: 0;
+            font-size: clamp(2rem, 5vw, 2.8rem);
+            letter-spacing: 0.03em;
+            color: #ffffff;
+            opacity: 0;
+            transform: translateX(-24px);
+            animation: textSlideIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.25s forwards;
+        }
+
+        .loading-content h1 span {
+            color: #a78bfa;
+        }
+
+        .loading-court {
+            position: relative;
+            width: 60px;
+            height: 72px;
+            opacity: 0;
+            animation: fadeIn 0.4s ease 0.7s forwards;
+        }
+
+        .loading-court::after {
+            content: '';
+            position: absolute;
+            left: -40px;
+            right: -40px;
+            bottom: 3px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #2a2640 30%, #2a2640 70%, transparent);
         }
 
         .loading-ball {
-            width: 34px;
-            height: 34px;
-            margin: 0 auto 14px;
+            position: absolute;
+            left: 50%;
+            bottom: 12px;
+            width: 30px;
+            height: 30px;
+            margin-left: -15px;
             border-radius: 50%;
             background: radial-gradient(circle at 35% 30%, #d9ff5e, #a4d400 70%);
-            position: relative;
             overflow: hidden;
-            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
-            opacity: 0;
-            animation: ballFadeIn 0.5s ease 2s forwards,
-                       ballBounce 0.85s cubic-bezier(0.5, 0, 1, 0.5) 2s infinite alternate;
+            animation: ballBounce 0.8s cubic-bezier(0.5, 0, 1, 0.5) 0.7s infinite alternate;
         }
 
         .loading-ball::before,
@@ -946,13 +1134,26 @@
             left: 45%;
         }
 
+        .loading-shadow {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            width: 30px;
+            height: 7px;
+            margin-left: -15px;
+            border-radius: 50%;
+            background: rgba(167, 139, 250, 0.4);
+            animation: shadowBounce 0.8s cubic-bezier(0.5, 0, 1, 0.5) 0.7s infinite alternate;
+        }
+
         .loading-status {
-            color: rgba(255, 255, 255, 0.75);
-            font-size: 0.95rem;
-            letter-spacing: 0.03em;
+            margin: 0;
             min-height: 1.2em;
+            font-size: 0.95rem;
+            letter-spacing: 0.06em;
+            color: #a9a4c4;
             opacity: 0;
-            animation: statusFadeIn 0.5s ease 3s forwards;
+            animation: fadeIn 0.5s ease 0.9s forwards;
         }
 
         .loading-status::after {
@@ -964,31 +1165,32 @@
         }
 
         @keyframes logoIntro {
-            from { opacity: 0; transform: scale(0.5); }
+            from { opacity: 0; transform: scale(0.6); }
             to { opacity: 1; transform: scale(1); }
         }
 
         @keyframes textSlideIn {
-            from { opacity: 0; transform: translateX(-36px); }
+            from { opacity: 0; transform: translateX(-24px); }
             to { opacity: 1; transform: translateX(0); }
         }
 
-        @keyframes ballFadeIn {
-            to { opacity: 1; }
+        @keyframes textSlideInUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        @keyframes statusFadeIn {
+        @keyframes fadeIn {
             to { opacity: 1; }
-        }
-
-        @keyframes logoPulse {
-            0%, 100% { transform: scale(1); opacity: 0.9; }
-            50% { transform: scale(1.08); opacity: 1; }
         }
 
         @keyframes ballBounce {
-            from { transform: translateY(0) rotate(0deg); }
-            to { transform: translateY(-26px) rotate(160deg); }
+            from { transform: translateY(-34px) rotate(0deg); }
+            to { transform: translateY(0) rotate(160deg); }
+        }
+
+        @keyframes shadowBounce {
+            from { transform: scale(0.55); opacity: 0.25; }
+            to { transform: scale(1); opacity: 0.7; }
         }
 
         @keyframes loadingDots {
@@ -999,50 +1201,111 @@
             100% { content: ''; }
         }
 
-        @keyframes textSlideInUp {
-            from { opacity: 0; transform: translateY(22px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes radialWipe {
+            from { opacity: 1; clip-path: circle(150% at 50% 50%); visibility: visible; }
+            to { opacity: 0; clip-path: circle(0% at 50% 50%); visibility: hidden; }
+        }
+
+        /* ==================== RESPONSIVO E ACESSIBILIDADE ==================== */
+        @media (max-width: 768px) {
+            .cluster-toolbar {
+                align-items: stretch;
+                flex-direction: column;
+                max-width: none;
+            }
+
+            .player-search-wrapper {
+                width: 100%;
+                min-width: 0;
+            }
+
+            #playerSearch {
+                min-width: 0;
+            }
+
+            h1 {
+                font-size: 2em;
+            }
+
+            .chip-row {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                padding-bottom: 4px;
+            }
+
+            .flt {
+                flex: none;
+            }
+
+            #tab-previsoes header h1 {
+                font-size: 28px;
+            }
+
+            .stats-header h2 {
+                font-size: 28px;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .navbar {
+                flex-direction: column;
+                justify-content: center;
+                gap: 6px;
+            }
+
+            .nav-tabs {
+                width: 100%;
+                gap: 0;
+            }
+
+            .nav-tab {
+                flex: 1 1 auto;
+                justify-content: center;
+                min-width: 0;
+                padding: 0 6px;
+                font-size: 13px;
+            }
         }
 
         @media (max-width: 480px) {
-            .loading-content {
-                padding: 0 20px;
-            }
-
             .loading-brand {
                 flex-direction: column;
                 gap: 12px;
             }
 
             .loading-content h1 {
-                font-size: clamp(1.8rem, 9vw, 2.6rem);
-                transform: translateY(22px);
+                font-size: clamp(1.8rem, 9vw, 2.4rem);
+                transform: translateY(18px);
                 animation-name: textSlideInUp;
             }
         }
 
+        @media (max-width: 380px) {
+            .nav-logo {
+                font-size: 20px;
+            }
+
+            .nav-tab {
+                padding: 0 3px;
+                font-size: 12px;
+            }
+        }
+
         @media (prefers-reduced-motion: reduce) {
+            .tab-content.active {
+                animation: none;
+            }
+
             .loading-content h1,
             .loading-logo,
+            .loading-court,
             .loading-ball,
+            .loading-shadow,
             .loading-status,
             .loading-status::after {
                 animation: none;
                 opacity: 1;
                 transform: none;
-            }
-        }
-
-        @keyframes radialWipe {
-            from {
-                opacity: 1;
-                clip-path: circle(150% at 50% 50%);
-                visibility: visible;
-            }
-            to {
-                opacity: 0;
-                clip-path: circle(0% at 50% 50%);
-                visibility: hidden;
             }
         }
     </style>
@@ -1052,9 +1315,12 @@
         <div class="loading-content">
             <div class="loading-brand">
                 <img class="loading-logo" src="https://migueloliveira6.github.io/VolatusTennis/Volatustennis.png?v=2" alt="" aria-hidden="true">
-                <h1>VolatusTennis</h1>
+                <h1>VOLATUS<span>TENNIS</span></h1>
             </div>
-            <div class="loading-ball" aria-hidden="true"></div>
+            <div class="loading-court" aria-hidden="true">
+                <div class="loading-ball"></div>
+                <div class="loading-shadow"></div>
+            </div>
             <p class="loading-status" id="loadingStatus">A carregar previsões</p>
         </div>
     </div>
@@ -1062,36 +1328,31 @@
     <div class="container">
         <!-- NAVBAR -->
         <nav class="navbar">
+            <span class="nav-logo">VOLATUS<span>TENNIS</span></span>
             <div class="nav-tabs">
                 <button class="nav-tab active" data-tab="previsoes">
-                    <span class="tab-icon"></span>
                     Previsões
                 </button>
                 <button class="nav-tab" data-tab="estatisticas">
-                    <span class="tab-icon"></span>
                     Estatísticas
                 </button>
                 <button class="nav-tab" data-tab="clustering">
-                    <span class="tab-icon"></span>
                     Clustering
                 </button>
                 <!-- Futuro: ELO & Rankings -->
-                <!-- <button class="nav-tab" data-tab="elo">
-                    <span class="tab-icon">🏆</span>
-                    ELO & Rankings
-                </button> -->
+                <!-- <button class="nav-tab" data-tab="elo">ELO & Rankings</button> -->
             </div>
         </nav>
         <div id="tab-previsoes" class="tab-content active">
             <header>
-                <h1>VolatusTennis</h1>
+                <h1>Previsões de hoje</h1>
                 <p class="subtitle">Um modelo criado para previsões de Ténis com Machine Learning</p>
             </header>
 
             <div class="stats-grid" id="stats">
                 <div class="stat-card">
                     <div class="stat-value" id="totalMatches">-</div>
-                    <div class="stat-label">Total de Jogos</div>
+                    <div class="stat-label">Jogos hoje</div>
                 </div>
                 <div class="stat-card">
                     <div class="stat-value" id="avgConfidence">-</div>
@@ -1108,19 +1369,12 @@
             </div>
 
             <div class="predictions-container">
-                <div class="predictions-header">
-                    <h2>Previsões do Dia</h2>
-                    <div class="filter-container">
-                        <label for="tournamentFilter">Filtrar por Torneio:</label>
-                        <select id="tournamentFilter" onchange="filterByTournament()">
-                            <option value="all">Todos os Torneios</option>
-                        </select>
-                    </div>
-                </div>
+                <div class="chip-row" id="tournamentChips" role="group" aria-label="Filtrar jogos"></div>
                 <div id="predictions" class="loading">
                     Carregando previsões...
                 </div>
             </div>
+            <p class="mx-foot">Informação estatística, não é aconselhamento de apostas.</p>
         </div>
          <!-- TAB: ESTATÍSTICAS (nova) -->
         <div id="tab-estatisticas" class="tab-content">
@@ -1140,11 +1394,11 @@
                     <div id="kpi-total-preds" class="stat-value">--</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">✅ Acertos</div>
+                    <div class="stat-label">Acertos</div>
                     <div id="kpi-correct" class="stat-value stat-positive">--</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">❌ Erros</div>
+                    <div class="stat-label">Erros</div>
                     <div id="kpi-wrong" class="stat-value stat-negative">--</div>
                 </div>
             </div>
@@ -1163,24 +1417,24 @@
             <!-- Gráficos -->
             <div class="charts-section">
                 <div class="chart-card">
-                    <h3>📈 Evolução da Taxa de Acerto</h3>
+                    <h3>Evolução da taxa de acerto</h3>
                     <canvas id="accuracyTrendChart" height="80"></canvas>
                 </div>
                 
                 <div class="chart-card">
-                    <h3>🎯 Acerto por Faixa de Confiança</h3>
+                    <h3>Acerto por faixa de confiança</h3>
                     <canvas id="confidenceChart" height="80"></canvas>
                 </div>
             </div>
 
             <!-- Top 10 por Superfície -->
             <div class="section">
-                <h2>🏆 Top 10 Jogadores por Superfície</h2>
+                <h2>Top 10 jogadores por superfície</h2>
                 
                 <div class="surface-tabs">
-                    <button class="surface-tab active" data-surface="hard">🔵 Hard</button>
-                    <button class="surface-tab" data-surface="clay">🟠 Clay</button>
-                    <button class="surface-tab" data-surface="grass">🟢 Grass</button>
+                    <button class="surface-tab active" data-surface="hard">Hard</button>
+                    <button class="surface-tab" data-surface="clay">Clay</button>
+                    <button class="surface-tab" data-surface="grass">Grass</button>
                 </div>
                 
                 <div id="top10-container" class="top10-grid"></div>
@@ -1188,7 +1442,7 @@
 
             <!-- Tendências de ELO -->
             <div class="section">
-                <h2>📈 Evolução de ELO - Top 5 Jogadores</h2>
+                <h2>Evolução do ELO dos 5 melhores jogadores</h2>
                 <div class="chart-card">
                     <canvas id="eloTrendsChart" height="150"></canvas>
                 </div>
@@ -1245,7 +1499,7 @@
                     <input
                         type="text"
                         id="playerSearch"
-                        placeholder=" Pesquisar jogador..."
+                        placeholder="Pesquisar jogador..."
                         autocomplete="off"
                     >
 
@@ -1312,7 +1566,7 @@
         ])
             .then(([data, status]) => {
                 allMatches = data;
-                populateTournamentFilter(data);
+                renderChips();
                 renderStats(data);
                 renderPredictions(data, status);
             })
@@ -1322,31 +1576,43 @@
             })
             .finally(() => resolvePredictionsReady());
 
-        function populateTournamentFilter(data) {
-            const tournaments = [...new Set(data.map(m => m.Torneio))].sort();
-            const select = document.getElementById('tournamentFilter');
-            
-            // Adicionar opções de torneios
-            tournaments.forEach(tournament => {
-                const option = document.createElement('option');
-                option.value = tournament;
-                option.textContent = `${tournament} (${data.filter(m => m.Torneio === tournament).length} jogos)`;
-                select.appendChild(option);
-            });
+        let onlyValue = false; // chip "Só com valor"
+
+        function renderChips() {
+            const row = document.getElementById('tournamentChips');
+            if (!row) return;
+            const tournaments = [...new Set(allMatches.map(m => m.Torneio))].sort();
+            const valueCount = allMatches.filter(m => m["Valor Aposta"] > 0).length;
+            const chip = (label, active, onClick) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'flt' + (active ? ' on' : '');
+                b.setAttribute('aria-pressed', active ? 'true' : 'false');
+                b.textContent = label;
+                b.addEventListener('click', onClick);
+                return b;
+            };
+            const chips = [chip(`Todos · ${allMatches.length}`, currentFilter === 'all', () => setTournament('all'))];
+            if (tournaments.length > 1) {
+                tournaments.forEach(t => chips.push(
+                    chip(`${t} · ${allMatches.filter(m => m.Torneio === t).length}`, currentFilter === t, () => setTournament(t))
+                ));
+            }
+            chips.push(chip(`Só com valor · ${valueCount}`, onlyValue, () => { onlyValue = !onlyValue; filterByTournament(); }));
+            row.replaceChildren(...chips);
+        }
+
+        function setTournament(t) {
+            currentFilter = t;
+            filterByTournament();
         }
 
         function filterByTournament() {
-            const select = document.getElementById('tournamentFilter');
-            currentFilter = select.value;
-            
-            if (currentFilter === 'all') {
-                renderStats(allMatches);
-                renderPredictions(allMatches);
-            } else {
-                const filtered = allMatches.filter(m => m.Torneio === currentFilter);
-                renderStats(filtered);
-                renderPredictions(filtered, { status: 'ready' });
-            }
+            let list = currentFilter === 'all' ? allMatches : allMatches.filter(m => m.Torneio === currentFilter);
+            if (onlyValue) list = list.filter(m => m["Valor Aposta"] > 0);
+            renderStats(list);
+            renderPredictions(list, { status: 'ready' });
+            renderChips();
         }
 
         function renderStats(data) {
@@ -1365,81 +1631,85 @@
 
         function renderPredictions(data, status = { status: 'ready' }) {
             const container = document.getElementById('predictions');
-            
+            container.classList.remove('loading');
+
             if (status.status === 'no_matches') {
-                container.innerHTML = `<p style="text-align: center; color: #999; padding: 40px;">${status.message}</p>`;
+                container.innerHTML = `<p class="mx-empty">${status.message}</p>`;
+                return;
+            }
+            if (data.length === 0) {
+                container.innerHTML = '<p class="mx-empty">Nenhum jogo encontrado para este filtro</p>';
                 return;
             }
 
-            if (data.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #999; padding: 40px;">Nenhum jogo encontrado para este torneio</p>';
-                return;
-            }
-            
-            const html = data.map(match => `
-                <div class="match-card">
-                    <div class="match-header">
-                        <div>
-                            <span class="tournament-badge">${match.Torneio}</span>
-                            <span class="tournament-badge">${match.Superfície}</span>
-                        </div>
-                        <div class="winner-badge">${match["Confiança (%)"]}% confiança</div>
+            const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            const short = n => String(n || '').trim().split(/\s+/).pop();
+            const odd = o => Number.isFinite(Number(o)) && o !== null && o !== '' ? Number(o).toFixed(2) : esc(o);
+            const surfaceColor = s => {
+                s = String(s || '').toLowerCase();
+                return s.includes('clay') ? 'var(--clay)' : s.includes('grass') ? 'var(--grass)' : s.includes('hard') ? 'var(--hard)' : 'var(--muted)';
+            };
+
+            container.innerHTML = data.map(match => {
+                const p1 = match["Jogador 1"], p2 = match["Jogador 2"];
+                const winner = match["Vencedor Previsto"];
+                const w1 = winner === p1;
+                const conf = Number(match["Confiança (%)"]) || 0;
+                const prob1 = w1 ? conf : 100 - conf;
+                const prob2 = 100 - prob1;
+
+                const elo = Number(match["ELO Diff"]) || 0; // Jogador 1 - Jogador 2
+                const eloText = elo === 0 ? 'Igual' : `${esc(short(elo > 0 ? p1 : p2))} +${Math.round(Math.abs(elo))}`;
+                const h2h = String(match.H2H ?? '-');
+                const valor = Number(match["Valor Aposta"]) || 0;
+                const roi = Number(match["ROI Esperado (%)"]) || 0;
+
+                const oddWin = Number(w1 ? match["Odd 1"] : match["Odd 2"]);
+                const implied = oddWin > 0 ? 100 / oddWin : null;
+                let note = '';
+                if (implied !== null && valor > 0 && implied < conf) {
+                    note = `O modelo dá ${conf.toFixed(1)}% a ${esc(short(winner))}, mas as odds de ${oddWin.toFixed(2)} implicam apenas ${implied.toFixed(0)}%.`;
+                } else if (implied !== null && valor <= 0 && implied > conf) {
+                    note = `Porquê sem valor? As odds de ${oddWin.toFixed(2)} implicam ${implied.toFixed(0)}% de probabilidade, acima dos ${conf.toFixed(1)}% do modelo.`;
+                }
+
+                return `
+                <article class="mx">
+                    <div class="mx-top">
+                        <div class="mx-m"><span class="mx-dot" style="background:${surfaceColor(match.Superfície)}"></span>${esc(match.Torneio)} · ${esc(match.Superfície)}</div>
+                        <div class="mx-conf"><b>${conf.toFixed(1)}%</b> <span class="mx-m">confiança</span></div>
                     </div>
-                    
-                    <div class="players-section">
-                        <div class="player-name ${match["Vencedor Previsto"] === match["Jogador 1"] ? 'predicted-winner' : ''}">
-                            ${match["Jogador 1"]}
+
+                    <div class="mx-players">
+                        <div class="mx-p ${w1 ? 'win' : ''}">
+                            <div class="mx-m tag">${w1 ? 'Previsão do modelo' : '&nbsp;'}</div>
+                            <div class="n">${esc(p1)}</div>
+                            <div class="mx-m">Odds ${odd(match["Odd 1"])}</div>
                         </div>
-                        <div class="vs-divider">VS</div>
-                        <div class="player-name ${match["Vencedor Previsto"] === match["Jogador 2"] ? 'predicted-winner' : ''}">
-                            ${match["Jogador 2"]}
-                        </div>
-                    </div>
-                    
-                    <div class="confidence-bar">
-                        <div class="confidence-fill" style="width: ${match["Confiança (%)"]}%"></div>
-                    </div>
-                    
-                    <div class="match-details">
-                        <div class="detail-item">
-                            <div class="detail-label">Vencedor Previsto</div>
-                            <div class="detail-value">${match["Vencedor Previsto"]}</div>
-                        </div>
-                        
-                        <div class="detail-item">
-                            <div class="detail-label">ELO Diff</div>
-                            <div class="detail-value">${match["ELO Diff"]}</div>
-                        </div>
-                        
-                        <div class="detail-item">
-                            <div class="detail-label">H2H</div>
-                            <div class="detail-value">${match.H2H}</div>
-                        </div>
-                        
-                        <div class="detail-item">
-                            <div class="detail-label">💰 Odds</div>
-                            <div class="detail-value">${match["Odd 1"]} / ${match["Odd 2"]}</div>
-                        </div>
-                        
-                        <div class="detail-item">
-                            <div class="detail-label">Valor Aposta</div>
-                            <div class="detail-value ${match["Valor Aposta"] > 0 ? 'valor_positive' : 'valor-negative'}">
-                                ${match["Valor Aposta"].toFixed(1)}%
-                            </div>
-                        </div>
-                        
-                        <div class="detail-item">
-                            <div class="detail-label">📈 ROI Esperado</div>
-                            <div class="detail-value ${match["ROI Esperado (%)"] > 0 ? 'roi-positive' : 'roi-negative'}">
-                                ${match["ROI Esperado (%)"].toFixed(1)}%
-                            </div>
+                        <div class="mx-p ${w1 ? '' : 'win'}">
+                            <div class="mx-m tag">${w1 ? '&nbsp;' : 'Previsão do modelo'}</div>
+                            <div class="n">${esc(p2)}</div>
+                            <div class="mx-m">Odds ${odd(match["Odd 2"])}</div>
                         </div>
                     </div>
-                </div>
-            `).join('');
-            
-            container.innerHTML = html;
+
+                    <div class="mx-bar" role="img" aria-label="Probabilidade: ${esc(p1)} ${prob1.toFixed(1)}%, ${esc(p2)} ${prob2.toFixed(1)}%">
+                        <i class="${w1 ? 'w' : ''}" style="width:${prob1}%"></i>
+                        <i class="${w1 ? '' : 'w'}" style="width:${prob2}%"></i>
+                    </div>
+                    <div class="mx-m mx-bar-l"><span>${esc(short(p1))} ${prob1.toFixed(1)}%</span><span>${esc(short(p2))} ${prob2.toFixed(1)}%</span></div>
+
+                    <div class="mx-tiles">
+                        <div class="mx-t"><span class="mx-m">Diferença ELO</span><b>${eloText}</b></div>
+                        <div class="mx-t"><span class="mx-m">Confrontos diretos</span><b class="${h2h.length > 14 ? 'sm' : ''}">${esc(h2h)}</b></div>
+                        <div class="mx-t"><span class="mx-m">Valor da aposta</span><b class="${valor > 0 ? 'pos' : 'zero'}">${valor > 0 ? '+' + valor.toFixed(1) + '%' : 'Sem valor'}</b></div>
+                        <div class="mx-t"><span class="mx-m">ROI esperado</span><b class="${roi > 0 ? 'pos' : roi < 0 ? 'neg' : 'zero'}">${roi > 0 ? '+' : ''}${roi.toFixed(1)}%</b></div>
+                    </div>
+                    ${note ? `<p class="mx-note">${note}</p>` : ''}
+                </article>`;
+            }).join('');
         }
+
         // ==================== SISTEMA DE TABS ====================
         document.querySelectorAll('.nav-tab').forEach(tab => {
             tab.addEventListener('click', () => {
@@ -1566,20 +1836,20 @@
                                     min: 0,
                                     max: 100,
                                     ticks: { 
-                                        color: '#ffffff',
+                                        color: '#cfcbe6',
                                         callback: function(value) { return value + '%'; }
                                     },
                                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                                 },
                                 x: {
                                     ticks: {
-                                        color: '#ffffff',
+                                        color: '#cfcbe6',
                                     },
                                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                                 }
                             },
                             plugins: {
-                                legend: { labels: { color: '#ffffff' } },
+                                legend: { labels: { color: '#cfcbe6' } },
                                 tooltip: {
                                     callbacks: {
                                         label: function(context) {
@@ -1624,13 +1894,13 @@
                                     min: 0,
                                     max: 100,
                                     ticks: { 
-                                        color: '#ffffff',
+                                        color: '#cfcbe6',
                                         callback: function(value) { return value + '%'; }
                                     },
                                     grid: { color: 'rgba(255, 255, 255, 0.1)' }
                                 },
                                 x: {
-                                    ticks: { color: '#ffffff' },
+                                    ticks: { color: '#cfcbe6' },
                                     grid: { display: false }
                                 }
                             },
@@ -1803,13 +2073,13 @@
                     scales: {
                         y: {
                             ticks: {
-                                color: '#ffffff'
+                                color: '#cfcbe6'
                             },
                             grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         },
                         x: {
                             ticks: {
-                                color: '#ffffff',
+                                color: '#cfcbe6',
                                 maxRotation: 45,
                                 minRotation: 0
                             },
@@ -1818,7 +2088,7 @@
                     },
                     plugins: {
                         legend: {
-                            labels: { color: '#ffffff' },
+                            labels: { color: '#cfcbe6' },
                             position: 'top'
                         },
                         tooltip: {
@@ -2106,11 +2376,11 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: { ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                        y: { ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                        x: { ticks: { color: '#cfcbe6' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        y: { ticks: { color: '#cfcbe6' }, grid: { color: 'rgba(255,255,255,0.1)' } }
                     },
                     plugins: {
-                        legend: { labels: { color: '#ffffff' } },
+                        legend: { labels: { color: '#cfcbe6' } },
                         tooltip: {
                             callbacks: {
                                 label(context) {
@@ -2149,8 +2419,8 @@
                         tooltip: { callbacks: { label(context) { return `${context.parsed.y} jogadores`; } } }
                     },
                     scales: {
-                        y: { beginAtZero: true, ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                        x: { ticks: { color: '#ffffff' }, grid: { display: false } }
+                        y: { beginAtZero: true, ticks: { color: '#cfcbe6' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        x: { ticks: { color: '#cfcbe6' }, grid: { display: false } }
                     }
                 }
             });
@@ -2183,11 +2453,11 @@
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        y: { ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                        x: { ticks: { color: '#ffffff' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                        y: { ticks: { color: '#cfcbe6' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        x: { ticks: { color: '#cfcbe6' }, grid: { color: 'rgba(255,255,255,0.1)' } }
                     },
                     plugins: {
-                        legend: { labels: { color: '#ffffff' } }
+                        legend: { labels: { color: '#cfcbe6' } }
                     }
                 }
             });
@@ -2223,18 +2493,16 @@
                         r: {
                             angleLines: { color: 'rgba(255,255,255,0.15)' },
                             grid: { color: 'rgba(255,255,255,0.15)' },
-                            pointLabels: { color: '#ffffff' },
+                            pointLabels: { color: '#cfcbe6' },
                             ticks: { display: false }
                         }
                     },
                     plugins: {
-                        legend: { labels: { color: '#ffffff' } }
+                        legend: { labels: { color: '#cfcbe6' } }
                     }
                 }
             });
         }
-
-        const loadingStartedAt = performance.now();
 
         // Pequena espera mínima só para evitar um "flash" do ecrã de loading
         // quando tudo carrega quase instantaneamente.
@@ -2252,7 +2520,7 @@
             else window.addEventListener('load', resolve, { once: true });
         });
 
-        Promise.all([windowLoaded, readyOrTimeout, minDelay(4200)]).then(() => {
+        Promise.all([windowLoaded, readyOrTimeout, minDelay(2000)]).then(() => {
             const loadingScreen = document.getElementById('loadingScreen');
             if (!loadingScreen) return;
 
