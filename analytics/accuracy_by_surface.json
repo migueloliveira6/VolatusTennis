@@ -132,22 +132,28 @@
     "accuracy": 62.32
   },
   {
-    "surface": "Almaty",
-    "total_predictions": 21,
-    "correct": 13,
-    "accuracy": 61.9
-  },
-  {
     "surface": "Queen's Club",
     "total_predictions": 34,
     "correct": 21,
     "accuracy": 61.76
   },
   {
+    "surface": "Almaty",
+    "total_predictions": 26,
+    "correct": 16,
+    "accuracy": 61.54
+  },
+  {
     "surface": "Umag",
     "total_predictions": 23,
     "correct": 14,
     "accuracy": 60.87
+  },
+  {
+    "surface": "Lyon",
+    "total_predictions": 25,
+    "correct": 15,
+    "accuracy": 60.0
   },
   {
     "surface": "Cincinnati",
@@ -174,28 +180,22 @@
     "accuracy": 59.26
   },
   {
+    "surface": "Brussels",
+    "total_predictions": 22,
+    "correct": 13,
+    "accuracy": 59.09
+  },
+  {
     "surface": "Munich",
     "total_predictions": 39,
     "correct": 23,
     "accuracy": 58.97
   },
   {
-    "surface": "Brussels",
-    "total_predictions": 17,
-    "correct": 10,
-    "accuracy": 58.82
-  },
-  {
     "surface": "Washington",
     "total_predictions": 31,
     "correct": 18,
     "accuracy": 58.06
-  },
-  {
-    "surface": "Lyon",
-    "total_predictions": 21,
-    "correct": 12,
-    "accuracy": 57.14
   },
   {
     "surface": "Barcelona",
