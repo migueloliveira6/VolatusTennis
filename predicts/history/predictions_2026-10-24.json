@@ -1,0 +1,72 @@
+[
+    {
+        "Torneio":"Brussels",
+        "Jogador 1":"Arthur Fils",
+        "Jogador 2":"Jan Lennard Struff",
+        "Vencedor Previsto":"Arthur Fils",
+        "Confiança (%)":84.1,
+        "ELO Diff":217.9,
+        "H2H":"1-0 (100% para Arthur Fils)",
+        "Odd 1":1.19,
+        "Odd 2":4.38,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0040000002,
+        "ROI Esperado (%)":0.1000000015
+    },
+    {
+        "Torneio":"Almaty",
+        "Jogador 1":"Nikoloz Basilashvili",
+        "Jogador 2":"Stefanos Tsitsipas",
+        "Vencedor Previsto":"Stefanos Tsitsipas",
+        "Confiança (%)":80.2,
+        "ELO Diff":-174.4,
+        "H2H":"1-3 (25% para Nikoloz Basilashvili)",
+        "Odd 1":3.01,
+        "Odd 2":1.37,
+        "Superfície":"Hard",
+        "Valor Aposta":0.2680000067,
+        "ROI Esperado (%)":9.8999996185
+    },
+    {
+        "Torneio":"Almaty",
+        "Jogador 1":"Daniil Medvedev",
+        "Jogador 2":"Alexander Bublik",
+        "Vencedor Previsto":"Daniil Medvedev",
+        "Confiança (%)":74.4,
+        "ELO Diff":142.4,
+        "H2H":"7-1 (88% para Daniil Medvedev)",
+        "Odd 1":1.48,
+        "Odd 2":2.63,
+        "Superfície":"Hard",
+        "Valor Aposta":0.2119999975,
+        "ROI Esperado (%)":10.1999998093
+    },
+    {
+        "Torneio":"Brussels",
+        "Jogador 1":"Francisco Cerundolo",
+        "Jogador 2":"Tallon Griekspoor",
+        "Vencedor Previsto":"Francisco Cerundolo",
+        "Confiança (%)":72.8,
+        "ELO Diff":109.8,
+        "H2H":"1-0 (100% para Francisco Cerundolo)",
+        "Odd 1":1.65,
+        "Odd 2":2.22,
+        "Superfície":"Hard",
+        "Valor Aposta":0.3100000024,
+        "ROI Esperado (%)":20.2000007629
+    },
+    {
+        "Torneio":"Lyon",
+        "Jogador 1":"Tommy Paul",
+        "Jogador 2":"Taylor Fritz",
+        "Vencedor Previsto":"Taylor Fritz",
+        "Confiança (%)":52.5,
+        "ELO Diff":-6.5,
+        "H2H":"4-4 (50% para Tommy Paul)",
+        "Odd 1":2.62,
+        "Odd 2":1.48,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    }
+]
