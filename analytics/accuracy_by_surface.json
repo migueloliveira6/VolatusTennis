@@ -60,6 +60,12 @@
     "accuracy": 68.97
   },
   {
+    "surface": "Lyon",
+    "total_predictions": 35,
+    "correct": 24,
+    "accuracy": 68.57
+  },
+  {
     "surface": "Beijing",
     "total_predictions": 31,
     "correct": 21,
@@ -67,15 +73,9 @@
   },
   {
     "surface": "Almaty",
-    "total_predictions": 34,
-    "correct": 23,
-    "accuracy": 67.65
-  },
-  {
-    "surface": "Lyon",
-    "total_predictions": 34,
-    "correct": 23,
-    "accuracy": 67.65
+    "total_predictions": 36,
+    "correct": 24,
+    "accuracy": 66.67
   },
   {
     "surface": "Bastad",
@@ -120,12 +120,6 @@
     "accuracy": 63.56
   },
   {
-    "surface": "Brussels",
-    "total_predictions": 30,
-    "correct": 19,
-    "accuracy": 63.33
-  },
-  {
     "surface": "Halle",
     "total_predictions": 35,
     "correct": 22,
@@ -166,6 +160,12 @@
     "total_predictions": 101,
     "correct": 60,
     "accuracy": 59.41
+  },
+  {
+    "surface": "Brussels",
+    "total_predictions": 32,
+    "correct": 19,
+    "accuracy": 59.38
   },
   {
     "surface": "Hamburg",
