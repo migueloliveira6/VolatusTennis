@@ -12,12 +12,6 @@
     "accuracy": 76.0
   },
   {
-    "surface": "Basel",
-    "total_predictions": 20,
-    "correct": 15,
-    "accuracy": 75.0
-  },
-  {
     "surface": "Mallorca",
     "total_predictions": 28,
     "correct": 21,
@@ -58,6 +52,12 @@
     "total_predictions": 121,
     "correct": 85,
     "accuracy": 70.25
+  },
+  {
+    "surface": "Basel",
+    "total_predictions": 26,
+    "correct": 18,
+    "accuracy": 69.23
   },
   {
     "surface": "Tokyo (Japan Open)",
@@ -126,6 +126,12 @@
     "accuracy": 63.56
   },
   {
+    "surface": "Vienna",
+    "total_predictions": 27,
+    "correct": 17,
+    "accuracy": 62.96
+  },
+  {
     "surface": "Halle",
     "total_predictions": 35,
     "correct": 22,
@@ -148,12 +154,6 @@
     "total_predictions": 69,
     "correct": 43,
     "accuracy": 62.32
-  },
-  {
-    "surface": "Vienna",
-    "total_predictions": 21,
-    "correct": 13,
-    "accuracy": 61.9
   },
   {
     "surface": "Queen's Club",
