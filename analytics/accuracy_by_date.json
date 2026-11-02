@@ -2565,5 +2565,20 @@
     "bet_profit_total": 0.769,
     "bet_accuracy": 75.0,
     "bet_roi": 57.3
+  },
+  {
+    "date": "2026-11-01",
+    "total_predictions": 6,
+    "correct": 4,
+    "wrong": 2,
+    "accuracy": 66.67,
+    "bet_bets": 2,
+    "bet_wins": 1,
+    "bet_losses": 1,
+    "bet_stake_total": 0.206,
+    "bet_return_total": 0.053,
+    "bet_profit_total": -0.153,
+    "bet_accuracy": 50.0,
+    "bet_roi": -74.27
   }
 ]
