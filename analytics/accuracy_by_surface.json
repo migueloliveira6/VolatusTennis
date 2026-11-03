@@ -90,12 +90,6 @@
     "accuracy": 66.67
   },
   {
-    "surface": "Paris",
-    "total_predictions": 15,
-    "correct": 10,
-    "accuracy": 66.67
-  },
-  {
     "surface": "Wimbledon",
     "total_predictions": 208,
     "correct": 137,
@@ -160,6 +154,12 @@
     "total_predictions": 34,
     "correct": 21,
     "accuracy": 61.76
+  },
+  {
+    "surface": "Paris",
+    "total_predictions": 26,
+    "correct": 16,
+    "accuracy": 61.54
   },
   {
     "surface": "Umag",
