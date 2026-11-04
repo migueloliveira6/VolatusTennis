@@ -29,6 +29,7 @@ python src/model_elo_xgboost.py                 # load-only: prints a summary of
 
 # DB maintenance
 python src/daily_update.py           # scrape yesterday's results, insert matches, update ELO in SQLite
+python src/recompute_elo.py --source-db datasets/tennis_data_2026.db --output-db datasets/tennis_data_2026_v2.db   # recompute ELO on a copy with match_policy
 
 # Player-style clustering (separate subsystem)
 python main.py --db-path datasets/tennis_data.db --output-dir outputs
@@ -42,7 +43,12 @@ Run scripts from the repo root. Many paths (`docs/`, `datasets/`, `previsoes/`, 
 
 **Data store**: `datasets/tennis_data.db` (SQLite; override with `DB_PATH`). `src/db.py` is the access layer: `load_matches_for_training`, `load_todays_matches`, `save_predictions`. It renames DB columns to what the model expects (`winner_surface_elo`, `loser_surface_elo`, ...). Historical source data is Jeff Sackmann's `tennis_atp` (`data/tennis_atp`). `src/rebuild_atp_db.py`, `atp_data_migration.py` and `migrate_csv_to_sqlite_FULL.py` build the DB.
 
-**ELO**: `src/elo_calculator.py` holds surface-separated ELO (Hard/Clay/Grass) with a K-factor per tournament level (ATP 32, Challenger 20) and a temporal-decay factor (30% floor for old matches). `daily_update.py` applies it incrementally to new results.
+**ELO**: `src/elo_calculator.py` holds surface-separated ELO (Hard/Clay/Grass) with a K-factor per tournament level (ATP 32, Challenger 20) and a temporal-decay factor (30% floor for old matches). `daily_update.py` applies it incrementally to new results. Special matches follow `src/match_policy.py` everywhere (ELO rebuild, `daily_update`, training):
+- W/O and the Laver Cup (exhibition) are out of ELO and training.
+- RET/DEF/abandoned matches update ELO with K×0.5 and count in history, but are not training examples.
+- Davis Cup, Olympics, United/ATP Cup and qualifying count normally.
+
+`recompute_elo.py` reapplies this to a copy of an existing DB. It keeps the scraped Jun–Oct 2026 rows that aren't in the Sackmann CSVs, which is why `atp_data_migration.py` (CSV rebuild) is not used for that.
 
 **Model**: `TennisPredictor` in `src/model_elo_xgboost.py` is the central class. `load_data()` (from the DB) → `preprocess_data()` walks matches chronologically and builds point-in-time player history, H2H, surface stats and profiles, so features never leak future data → `train_model()` (XGBoost + Optuna, `TimeSeriesSplit`, fixed 0.5 threshold). It evaluates on the most recent 15%, then refits on 100% of the data and returns a metrics dict → `save_model()` / `load_saved_model()`. `predict_match(p1, p2, surface, date, tourney_level)` serves predictions. Probabilities are calibrated (Platt or isotonic, chosen on a temporal calibration block in `src/evaluation.py`, stored as `calibrator` in the data pkl and applied in `predict_match`). Each training run reports baselines (ELO-only, rank points, higher-ranked) and ATP-only metrics on the same holdout. Bet sizing in `engine.calcular_stake_kelly` is fractional Kelly (`KELLY_FRACTION`, `MIN_EDGE`, `MAX_STAKE` env, defaults 0.25 / 0.02 / 0.05). Training and prediction must share `_build_feature_row()` and `_to_model_matrix()` (one-hot of `surface` + `tourney_level`); `tests/test_predict_alignment.py` guards this. Artifacts live in `MODEL_PATH` (default `models/`) as `tennis_surface_elo_{model,data}_xgboost.pkl`. The `_data` pickle holds the player-state dicts needed at inference. `engine.py` only loads the model and exits with an error if it is missing; training is `src/train_model.py`. **Never run `engine.py` to test changes**: it scrapes and sends Telegram messages. Other `model_elo_*.py` / `train_model3.py` / `first_model.py` files are experiments or variants (WTA, random forest, ensemble), not the production path.
 

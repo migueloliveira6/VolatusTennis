@@ -10,6 +10,11 @@ from dotenv import load_dotenv
 from sklearn.model_selection import TimeSeriesSplit
 
 try:
+    from match_policy import add_policy_columns
+except ImportError:
+    from src.match_policy import add_policy_columns
+
+try:
     from evaluation import (ATP_LEVELS, apply_calibration, baseline_metrics, expected_calibration_error,
                             fit_calibrator, probability_metrics, reliability_table, select_calibration_method)
 except ImportError:
@@ -93,9 +98,17 @@ class TennisPredictor:
             (self.matches['winner_surface_elo'].notna()) &
             (self.matches['loser_surface_elo'].notna())
         ].copy()
-        
-        # Ordenar por data para processamento temporal
-        valid_matches = valid_matches.sort_values('tourney_date')
+
+        # Política de jogos especiais: W/O e exibições ficam fora do histórico;
+        # abandonos entram no histórico mas não são exemplos de treino.
+        valid_matches = add_policy_columns(valid_matches)
+        excluded = int((~valid_matches['counts_for_history']).sum())
+        valid_matches = valid_matches[valid_matches['counts_for_history']]
+        print(f"Jogos fora do histórico (W/O, exibições): {excluded} | "
+              f"fora do treino (abandonos): {int((~valid_matches['training_target']).sum())}")
+
+        # Ordenar por data para processamento temporal (estável: mantém a ordem da BD no mesmo dia)
+        valid_matches = valid_matches.sort_values('tourney_date', kind='mergesort')
 
         # Garantir coluna de nível de torneio para engenharia de features.
         if 'tourney_level' not in valid_matches.columns:
@@ -118,6 +131,8 @@ class TennisPredictor:
             loser_elo_pre = self._get_elo_before_match(row['loser_name'], row['surface'], row['tourney_date'])
             
             if pd.isna(winner_elo_pre) or pd.isna(loser_elo_pre):
+                continue
+            if not row['training_target']:
                 continue
             # Uma única linha por partida para evitar leakage entre perspetivas.
             if rng.random() < 0.5:

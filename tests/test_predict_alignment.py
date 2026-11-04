@@ -83,6 +83,22 @@ def test_training_and_prediction_build_the_same_features():
     assert X_pred['surface_Clay'].iloc[0] == 1
 
 
+def test_preprocess_skips_walkovers_and_keeps_retirements_out_of_training():
+    matches = _synthetic_matches(n=40)
+    matches['score'] = '6-3 6-4'
+    matches.loc[10, 'score'] = 'W/O'
+    matches.loc[11, 'score'] = '6-4 1-0 RET'
+    matches['tourney_name'] = 'Torneio'
+    predictor = TennisPredictor()
+    predictor.matches = matches
+
+    df = predictor.preprocess_data()
+
+    assert len(df) == 38
+    total_history = sum(len(h) for h in predictor.player_history.values())
+    assert total_history == 2 * 39  # o abandono conta no histórico, o walkover não
+
+
 def test_train_model_returns_metrics_and_refits_on_all_data(monkeypatch):
     monkeypatch.setenv('OPTUNA_TRIALS', '1')
     predictor, df = _prepared_predictor()
