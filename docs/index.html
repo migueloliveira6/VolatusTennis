@@ -1671,6 +1671,8 @@
                     note = `O modelo dá ${conf.toFixed(1)}% a ${esc(short(winner))}, mas as odds de ${oddWin.toFixed(2)} implicam apenas ${implied.toFixed(0)}%.`;
                 } else if (implied !== null && valor <= 0 && implied > conf) {
                     note = `Porquê sem valor? As odds de ${oddWin.toFixed(2)} implicam ${implied.toFixed(0)}% de probabilidade, acima dos ${conf.toFixed(1)}% do modelo.`;
+                } else if (implied !== null && valor <= 0) {
+                    note = `Porquê sem valor? A vantagem do modelo sobre as odds (${(conf - implied).toFixed(1)} p.p.) fica abaixo do mínimo para apostar.`;
                 }
 
                 return `
@@ -1702,7 +1704,7 @@
                     <div class="mx-tiles">
                         <div class="mx-t"><span class="mx-m">Diferença ELO</span><b>${eloText}</b></div>
                         <div class="mx-t"><span class="mx-m">Confrontos diretos</span><b class="${h2h.length > 14 ? 'sm' : ''}">${esc(h2h)}</b></div>
-                        <div class="mx-t"><span class="mx-m">Valor da aposta</span><b class="${valor > 0 ? 'pos' : 'zero'}">${valor > 0 ? '+' + valor.toFixed(1) + '%' : 'Sem valor'}</b></div>
+                        <div class="mx-t"><span class="mx-m">Stake sugerido</span><b class="${valor > 0 ? 'pos' : 'zero'}" title="Fração da banca (Kelly fracionado)">${valor > 0 ? (valor * 100).toFixed(1) + '% da banca' : 'Sem valor'}</b></div>
                         <div class="mx-t"><span class="mx-m">ROI esperado</span><b class="${roi > 0 ? 'pos' : roi < 0 ? 'neg' : 'zero'}">${roi > 0 ? '+' : ''}${roi.toFixed(1)}%</b></div>
                     </div>
                     ${note ? `<p class="mx-note">${note}</p>` : ''}

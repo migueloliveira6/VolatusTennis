@@ -17,17 +17,19 @@ ENV/
 # 🔹 Modelos treinados e dados locais
 models/*.pkl
 !models/tennis_surface_elo_model_xgboost.pkl
-!models/tennis_surface_elo_scaler_xgboost.pkl
 !models/tennis_surface_elo_data_xgboost.pkl
-datasets/*.csv
-!datasets/tennis_data.db
-data/
+models/manifest.json
+# DB SQLite (>100MB) fica fora do git
+/datasets/
+*.db
+# "/data/" com barra para não apanhar docs/data/ (JSON do site)
+/data/
 previsoes/*
 !previsoes/previsoes_tenis.csv
 notebooks/*
-src/
 metrics/*
 outputs/
+.pytest_cache/
 
 # 🔹 Dados brutos e intermediários
 src/*.csv
