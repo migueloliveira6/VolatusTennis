@@ -5,6 +5,7 @@ import pytest
 
 from match_policy import (add_policy_columns, classify_result, counts_for_history, elo_k_multiplier,
                           is_training_target)
+from elo_calculator import dynamic_k, expected_score
 from recompute_elo import recompute
 
 
@@ -42,7 +43,7 @@ def test_add_policy_columns_without_score_treats_all_as_completed():
 def _make_db(path):
     conn = sqlite3.connect(path)
     conn.execute('''CREATE TABLE matches (
-        match_id INTEGER PRIMARY KEY, tourney_date TEXT, winner_name TEXT, loser_name TEXT, surface TEXT,
+        match_id INTEGER PRIMARY KEY, tourney_date TEXT, tourney_id TEXT, round TEXT, match_num INTEGER, winner_name TEXT, loser_name TEXT, surface TEXT,
         score TEXT, tourney_name TEXT, tourney_level TEXT, tournament_type TEXT, temporal_factor REAL,
         winner_elo_before REAL, loser_elo_before REAL, winner_elo_after REAL, loser_elo_after REAL,
         k_factor_used REAL, effective_k_factor REAL)''')
@@ -56,7 +57,8 @@ def _make_db(path):
         (5, '2025-08-25', 'A', 'B', 'Hard', '6-3 6-4', 'Us-Open', 'W', 'regular', 1.0),
     ]
     conn.executemany('INSERT INTO matches (match_id, tourney_date, winner_name, loser_name, surface, score, '
-                     'tourney_name, tourney_level, tournament_type, temporal_factor) VALUES (?,?,?,?,?,?,?,?,?,?)', rows)
+                     'tourney_name, tourney_level, tournament_type, temporal_factor, tourney_id, round, match_num) '
+                     'VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)', [r + (f'T{r[0]}', 'R32', 1) for r in rows])
     conn.executemany('INSERT INTO players VALUES (?, 1500, 1500, 1500, 1500, NULL)', [('A',), ('B',)])
     conn.commit()
     conn.close()
@@ -74,12 +76,12 @@ def test_recompute_elo_applies_policy_on_a_copy(tmp_path):
     m = {r[0]: r for r in conn.execute(
         'SELECT match_id, winner_elo_before, winner_elo_after, effective_k_factor, counts_for_elo, '
         'training_target, tourney_level, tournament_type FROM matches ORDER BY match_id')}
-    # 1: jogo normal ATP (K=32): 1500 -> 1516
-    assert m[1][2] == pytest.approx(1516.0)
+    # 1: jogo normal ATP, K dinâmico de um jogador novo (n=0): 1500 -> 1500 + K/2
+    assert m[1][2] == pytest.approx(1500 + dynamic_k(0) * 0.5)
     # 2: walkover não mexe no ELO
     assert m[2][1] == m[2][2] and m[2][4] == 0 and m[2][5] == 0
-    # 3: abandono com K x 0.5 e fora do treino
-    assert m[3][3] == pytest.approx(16.0) and m[3][4] == 1 and m[3][5] == 0
+    # 3: abandono num Grand Slam: K dinâmico (n=1, o W/O não conta) x 0.5 x 1.1, fora do treino
+    assert m[3][3] == pytest.approx(dynamic_k(1) * 0.5 * 1.1) and m[3][4] == 1 and m[3][5] == 0
     # 4: Laver Cup excluída
     assert m[4][4] == 0 and m[4][5] == 0
     # 5: correções de dados do scraping

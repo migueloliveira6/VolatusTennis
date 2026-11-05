@@ -21,8 +21,13 @@ from datetime import datetime, timezone
 import pandas as pd
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from model_elo_xgboost import TennisPredictor, MODEL_PATH, MODEL_FILENAME, DATA_FILENAME
+from features import FEATURE_GROUPS
+from model_elo_xgboost import TennisPredictor, MODEL_PATH, MODEL_FILENAME, DATA_FILENAME, features_for_groups
 
+# Fadiga e momentum dependem de o estado dos jogadores estar fresco (dias desde o último jogo).
+# Em produção o estado fica congelado no último jogo da BD, por isso ficam fora até a BD
+# ser atualizada diariamente.
+DEFAULT_EXCLUDED_GROUPS = ('fatigue', 'momentum')
 DEFAULT_START_YEAR = 2000
 DEFAULT_END_YEAR = 2026
 LOG_DIR = 'logs'
@@ -60,6 +65,10 @@ def build_parser():
     parser.add_argument('--trials', type=int, default=None, help='Nº de trials Optuna (default: OPTUNA_TRIALS ou 10)')
     parser.add_argument('--model-dir', default=MODEL_PATH, help='Pasta de saída dos modelos (default: MODEL_PATH)')
     parser.add_argument('--no-refit', action='store_true', help='Não refazer o fit final com 100%% dos dados')
+    parser.add_argument('--exclude-groups', nargs='*', default=list(DEFAULT_EXCLUDED_GROUPS),
+                        help=f"Grupos de features a retirar ({', '.join(FEATURE_GROUPS)}). "
+                             f"Por defeito: {' '.join(DEFAULT_EXCLUDED_GROUPS)}. "
+                             "Use '--exclude-groups' sem valores para treinar com todas.")
     return parser
 
 
@@ -114,7 +123,8 @@ def main(argv=None):
     logger.addHandler(fh)
 
     logger.info('🔧 Iniciando treino do modelo XGBoost')
-    logger.info(f"Anos: {args.start_year}-{args.end_year} | Model dir: {args.model_dir}")
+    logger.info(f"Anos: {args.start_year}-{args.end_year} | Model dir: {args.model_dir} | "
+                f"Grupos excluídos: {', '.join(args.exclude_groups) or 'nenhum'}")
 
     predictor = TennisPredictor()
 
@@ -133,7 +143,9 @@ def main(argv=None):
         return 1
 
     start_train = time.time()
-    metrics = predictor.train_model(df, refit_full=not args.no_refit)
+    metrics = predictor.train_model(df, refit_full=not args.no_refit,
+                                    exclude_features=features_for_groups(args.exclude_groups))
+    metrics['excluded_groups'] = list(args.exclude_groups)
     metrics['train_time_seconds'] = round(time.time() - start_train, 1)
     metrics['preprocess_time_seconds'] = round(load_time, 1)
     logger.info(f"📊 Métricas no holdout temporal: {metrics}")

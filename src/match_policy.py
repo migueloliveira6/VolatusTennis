@@ -70,6 +70,23 @@ def is_training_target(score, tourney_name=None) -> bool:
     return not is_exhibition(tourney_name) and classify_result(score) == RESULT_COMPLETED
 
 
+# Ordem das rondas dentro de um torneio (o match_num do Sackmann não segue as rondas)
+ROUND_ORDER = {
+    'Q1': 0, 'Q2': 1, 'Q3': 2, 'Q4': 3, 'ER': 4,
+    'R128': 5, 'R64': 6, 'R32': 7, 'R16': 8, 'RR': 9,
+    'QF': 10, 'SF': 11, 'BR': 12, 'F': 13,
+}
+
+
+def sort_matches(df: pd.DataFrame) -> pd.DataFrame:
+    """Ordena cronologicamente: data do torneio, torneio, ronda e match_num (ordenação estável)."""
+    out = df.copy()
+    out['_round_order'] = out['round'].map(ROUND_ORDER).fillna(4.5) if 'round' in out.columns else 0
+    keys = [c for c in ('tourney_date', 'tourney_id', '_round_order', 'match_num') if c in out.columns]
+    out = out.sort_values(keys, kind='mergesort', na_position='last')
+    return out.drop(columns='_round_order')
+
+
 def add_policy_columns(df: pd.DataFrame) -> pd.DataFrame:
     """Acrescenta `result_type`, `counts_for_history` e `training_target` a um DataFrame de jogos.
 

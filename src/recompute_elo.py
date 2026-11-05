@@ -2,7 +2,8 @@
 """Recalcula o ELO por superfície de uma BD existente aplicando a política de `match_policy.py`.
 
 Trabalha sobre uma CÓPIA da BD (a original nunca é alterada), para manter os jogos que vieram
-do scraping e não existem nos CSV do Sackmann. Mantém o fator temporal já gravado em cada jogo.
+do scraping e não existem nos CSV do Sackmann. Usa o ELO com K dinâmico (nº de jogos do jogador,
+sem ano de referência) e a ordem data → torneio → ronda → match_num.
 
 Usage:
     python src/recompute_elo.py --source-db datasets/tennis_data_2026.db --output-db datasets/tennis_data_2026_v2.db
@@ -14,9 +15,11 @@ import sqlite3
 import sys
 from collections import Counter
 
+import pandas as pd
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from elo_calculator import INITIAL_ELO, get_k_factor_for_tournament, update_elo
-from match_policy import classify_result, elo_k_multiplier, is_exhibition, is_training_target
+from elo_calculator import INITIAL_ELO, level_k_multiplier, update_elo_dynamic
+from match_policy import classify_result, elo_k_multiplier, is_exhibition, is_training_target, sort_matches
 
 SURFACES = ('hard', 'clay', 'grass', 'carpet')
 
@@ -62,51 +65,56 @@ def recompute(source_db: str, output_db: str, force: bool = False) -> dict:
     cursor = conn.cursor()
     _ensure_policy_columns(cursor)
 
-    rows = cursor.execute(
-        'SELECT match_id, winner_name, loser_name, surface, score, tourney_name, tourney_level, '
-        'tournament_type, temporal_factor FROM matches ORDER BY match_id'
-    ).fetchall()
+    matches = pd.read_sql_query(
+        'SELECT match_id, tourney_date, tourney_id, round, match_num, winner_name, loser_name, surface, '
+        'score, tourney_name, tourney_level, tournament_type FROM matches', conn
+    )
+    matches = sort_matches(matches)
 
-    elo = {}  # (jogador, superfície) -> ELO atual
+    elo = {}       # (jogador, superfície) -> ELO atual
+    n_matches = {}  # (jogador, superfície) -> nº de jogos que contaram para o ELO
     last_date = {}
     updates = []
     stats = Counter()
 
-    for match_id, winner, loser, surface, score, tourney_name, level, tournament_type, temporal_factor in rows:
-        level = LEVEL_FIXES.get(level, level)
-        tournament_type = TOURNAMENT_TYPE_FIXES.get(tournament_type, tournament_type) or 'ATP'
-        surface_key = (surface or 'Hard').lower()
-        result_type = classify_result(score)
-        multiplier = elo_k_multiplier(score, tourney_name)
+    for row in matches.itertuples(index=False):
+        level = LEVEL_FIXES.get(row.tourney_level, row.tourney_level)
+        tournament_type = TOURNAMENT_TYPE_FIXES.get(row.tournament_type, row.tournament_type) or 'ATP'
+        surface_key = (row.surface or 'Hard').lower()
+        winner_key, loser_key = (row.winner_name, surface_key), (row.loser_name, surface_key)
+        result_type = classify_result(row.score)
+        policy_multiplier = elo_k_multiplier(row.score, row.tourney_name)
+        multiplier = policy_multiplier * level_k_multiplier(level, row.round)
         stats[result_type] += 1
-        if is_exhibition(tourney_name):
+        if is_exhibition(row.tourney_name):
             stats['exhibition'] += 1
 
-        winner_before = elo.get((winner, surface_key), INITIAL_ELO)
-        loser_before = elo.get((loser, surface_key), INITIAL_ELO)
-        temporal_factor = 1.0 if temporal_factor is None else float(temporal_factor)
+        winner_before = elo.get(winner_key, INITIAL_ELO)
+        loser_before = elo.get(loser_key, INITIAL_ELO)
 
         if multiplier > 0:
-            winner_after, loser_after, effective_k = update_elo(
-                winner_before, loser_before, tournament_type, temporal_factor=temporal_factor * multiplier
+            winner_after, loser_after, k_winner, _ = update_elo_dynamic(
+                winner_before, loser_before, n_matches.get(winner_key, 0), n_matches.get(loser_key, 0), multiplier
             )
-            elo[(winner, surface_key)] = winner_after
-            elo[(loser, surface_key)] = loser_after
+            elo[winner_key], elo[loser_key] = winner_after, loser_after
+            n_matches[winner_key] = n_matches.get(winner_key, 0) + 1
+            n_matches[loser_key] = n_matches.get(loser_key, 0) + 1
         else:
-            winner_after, loser_after, effective_k = winner_before, loser_before, 0.0
+            winner_after, loser_after, k_winner = winner_before, loser_before, 0.0
             stats['excluded_from_elo'] += 1
 
         updates.append((
             level, tournament_type, winner_before, loser_before, winner_after, loser_after,
-            get_k_factor_for_tournament(tournament_type), effective_k,
-            result_type, int(multiplier > 0), int(is_training_target(score, tourney_name)), multiplier,
-            match_id,
+            # k_factor_used = K do vencedor (dinâmico); temporal_factor deixa de ser usado (1.0)
+            k_winner, k_winner, 1.0,
+            result_type, int(policy_multiplier > 0), int(is_training_target(row.score, row.tourney_name)),
+            multiplier, int(row.match_id),
         ))
 
     cursor.executemany(
         'UPDATE matches SET tourney_level = ?, tournament_type = ?, '
         'winner_elo_before = ?, loser_elo_before = ?, winner_elo_after = ?, loser_elo_after = ?, '
-        'k_factor_used = ?, effective_k_factor = ?, '
+        'k_factor_used = ?, effective_k_factor = ?, temporal_factor = ?, '
         'result_type = ?, counts_for_elo = ?, training_target = ?, elo_k_multiplier = ? '
         'WHERE match_id = ?',
         updates,
@@ -130,7 +138,7 @@ def recompute(source_db: str, output_db: str, force: bool = False) -> dict:
     conn.commit()
     conn.close()
 
-    summary = {'matches': len(rows), **stats}
+    summary = {'matches': len(matches), **stats}
     return summary
 
 

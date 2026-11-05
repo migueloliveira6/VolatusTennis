@@ -170,6 +170,51 @@ get_k_factor = get_k_factor_for_tournament
 
 
 # ============================================================================
+# ELO COM K DINÂMICO (sem ano de referência)
+# ============================================================================
+# K depende do nº de jogos já disputados pelo jogador (fórmula estilo FiveThirtyEight):
+# jogadores novos movem-se depressa, veteranos estabilizam. Não há decaimento por ano civil,
+# por isso o ELO de um jogo passado não depende da data em que a BD é reconstruída.
+
+DYNAMIC_K_NUMERATOR = 250.0
+DYNAMIC_K_OFFSET = 5.0
+DYNAMIC_K_SHAPE = 0.4
+
+# Multiplicadores por nível (códigos Sackmann); qualifying usa o multiplicador de Challenger
+LEVEL_K_MULTIPLIER = {'G': 1.1, 'C': 0.85, 'S': 0.7, 'T': 0.7, 'J': 0.7}
+QUALIFYING_ROUNDS = ('Q1', 'Q2', 'Q3', 'Q4')
+QUALIFYING_K_MULTIPLIER = 0.85
+
+
+def dynamic_k(n_matches):
+    """K do jogador em função do nº de jogos anteriores (n=0 → ~131, n=500 → ~21)."""
+    return DYNAMIC_K_NUMERATOR / ((max(n_matches, 0) + DYNAMIC_K_OFFSET) ** DYNAMIC_K_SHAPE)
+
+
+def level_k_multiplier(tourney_level=None, round_name=None):
+    """Peso do jogo no ELO consoante o nível do torneio e se é qualifying."""
+    if isinstance(round_name, str) and round_name.upper() in QUALIFYING_ROUNDS:
+        return QUALIFYING_K_MULTIPLIER
+    if isinstance(tourney_level, str):
+        return LEVEL_K_MULTIPLIER.get(tourney_level.upper(), 1.0)
+    return 1.0
+
+
+def update_elo_dynamic(winner_elo, loser_elo, winner_n, loser_n, multiplier=1.0):
+    """Atualiza o ELO com K próprio de cada jogador.
+
+    Returns:
+        tuple: (novo_elo_vencedor, novo_elo_perdedor, k_vencedor, k_perdedor)
+    """
+    expected_win = expected_score(winner_elo, loser_elo)
+    k_winner = dynamic_k(winner_n) * multiplier
+    k_loser = dynamic_k(loser_n) * multiplier
+    return (winner_elo + k_winner * (1 - expected_win),
+            loser_elo - k_loser * (1 - expected_win),
+            k_winner, k_loser)
+
+
+# ============================================================================
 # FUNÇÕES DE VALIDAÇÃO (Para testes)
 # ============================================================================
 

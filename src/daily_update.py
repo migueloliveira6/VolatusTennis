@@ -14,7 +14,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 import argparse
 import logging
-from elo_calculator import update_elo, get_k_factor, calculate_temporal_factor
+from elo_calculator import get_k_factor, level_k_multiplier, update_elo_dynamic
 from match_policy import elo_k_multiplier
 from scraper_results import scrape_yesterday_results
 
@@ -30,6 +30,15 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # FUNÇÕES DE BASE DE DADOS
+
+def count_player_matches(cursor, player_name, surface):
+    """Nº de jogos do jogador na superfície que contam para o ELO (exclui walkovers)."""
+    return cursor.execute(
+        "SELECT COUNT(*) FROM matches WHERE (winner_name = ? OR loser_name = ?) AND surface = ? "
+        "AND (score IS NULL OR score NOT LIKE '%W/O%')",
+        (player_name, player_name, surface),
+    ).fetchone()[0]
+
 
 def get_player_elo(cursor, player_name, surface):
     """
@@ -165,15 +174,17 @@ def process_daily_results(results_df, db_path=DB_PATH):
             if isinstance(match_date, str):
                 match_date = datetime.strptime(match_date, '%Y-%m-%d')
 
-            # Política de jogos especiais: W/O e exibições não mexem no ELO; abandonos com K × 0.5
-            k_multiplier = elo_k_multiplier(row.get('score'), row.get('tourney_name'))
+            # Política de jogos especiais: W/O e exibições não mexem no ELO; abandonos com K × 0.5.
+            # ELO com K dinâmico pelo nº de jogos de cada jogador na superfície (igual ao recompute_elo.py).
+            k_multiplier = elo_k_multiplier(row.get('score'), row.get('tourney_name')) * level_k_multiplier(
+                row.get('tourney_level'), row.get('round'))
             if k_multiplier > 0:
-                # Para jogos recentes, temporal_factor ≈ 1.0
-                winner_elo_after, loser_elo_after, k_eff = update_elo(
+                winner_elo_after, loser_elo_after, k_eff, _ = update_elo_dynamic(
                     winner_elo_before,
                     loser_elo_before,
-                    tournament_type,
-                    temporal_factor=calculate_temporal_factor(match_date) * k_multiplier
+                    count_player_matches(cursor, row['winner'], surface),
+                    count_player_matches(cursor, row['loser'], surface),
+                    k_multiplier,
                 )
             else:
                 winner_elo_after, loser_elo_after, k_eff = winner_elo_before, loser_elo_before, 0.0
