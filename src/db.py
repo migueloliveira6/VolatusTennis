@@ -29,6 +29,13 @@ def load_matches_for_training(conn: sqlite3.Connection, start_date: Optional[str
     optional_selects = []
     if 'tourney_level' in available_columns:
         optional_selects.append("COALESCE(tourney_level, 'UNK') as tourney_level")
+    # Política de jogos especiais (match_policy.py), ordem cronológica (ronda/match_num)
+    # e features de serviço/resposta e fadiga (features.py)
+    for column in ('score', 'tourney_name', 'tourney_id', 'match_num', 'round', 'best_of', 'minutes',
+                   'w_ace', 'w_df', 'w_svpt', 'w_1stWon', 'w_2ndWon',
+                   'l_ace', 'l_df', 'l_svpt', 'l_1stWon', 'l_2ndWon'):
+        if column in available_columns:
+            optional_selects.append(column)
 
     optional_select_sql = ""
     if optional_selects:

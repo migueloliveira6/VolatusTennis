@@ -471,6 +471,54 @@ class SuperficieDetector:
         return "Hard"
 
 
+# Gestão de banca: fração do Kelly completo, edge mínimo sobre a prob. implícita e stake máximo
+KELLY_FRACTION = float(os.getenv('KELLY_FRACTION', '0.25'))
+MIN_EDGE = float(os.getenv('MIN_EDGE', '0.02'))
+MAX_STAKE = float(os.getenv('MAX_STAKE', '0.05'))
+
+
+def calcular_stake_kelly(prob: float, odd: float, fracao: float = None, edge_minimo: float = None,
+                         stake_maximo: float = None) -> Tuple[float, float]:
+    """Devolve (stake em fração da banca, ROI esperado por unidade apostada).
+
+    Só aposta quando a probabilidade do modelo supera a implícita na odd em pelo menos `edge_minimo`.
+    O stake é `fracao` × Kelly completo, limitado a `stake_maximo`.
+    """
+    fracao = KELLY_FRACTION if fracao is None else fracao
+    edge_minimo = MIN_EDGE if edge_minimo is None else edge_minimo
+    stake_maximo = MAX_STAKE if stake_maximo is None else stake_maximo
+
+    if prob is None or odd is None or pd.isna(prob) or pd.isna(odd) or odd <= 1:
+        return 0, 0
+    edge = prob - 1 / odd
+    if edge < edge_minimo:
+        return 0, 0
+
+    kelly_completo = (prob * odd - 1) / (odd - 1)
+    roi_esperado = prob * (odd - 1) - (1 - prob)
+    stake = max(0.0, min(fracao * kelly_completo, stake_maximo))
+    return round(stake, 4), round(roi_esperado, 3)
+
+
+GRAND_SLAMS = ("australian open", "french open", "roland garros", "wimbledon", "us open")
+MASTERS_1000 = ("indian wells", "miami", "monte carlo", "madrid", "rome", "toronto", "montreal",
+                "canada", "cincinnati", "shanghai", "paris")
+
+
+def inferir_nivel_torneio(nome_torneio: str) -> str:
+    """Converte o nome do torneio (TennisExplorer, ATP singles) no código de nível do Sackmann."""
+    nome = (nome_torneio or "").lower()
+    if any(gs in nome for gs in GRAND_SLAMS):
+        return "G"
+    if "atp finals" in nome or "masters cup" in nome:
+        return "F"
+    if "davis cup" in nome:
+        return "D"
+    if any(m in nome for m in MASTERS_1000):
+        return "M"
+    return "A"
+
+
 # ============================================================================
 # ANALISADOR DE PREVISÕES
 # ============================================================================
@@ -519,7 +567,10 @@ class TennisPredicaoAnalyzer:
                 return None
             
             superficie = self.superficie_detector.detectar_superficie(torneio, data)
-            winner, prob, detalhes = self.predictor.predict_match(p1, p2, superficie, date=data)
+            nivel = inferir_nivel_torneio(torneio)
+            winner, prob, detalhes = self.predictor.predict_match(
+                p1, p2, superficie, date=data, tourney_level=nivel
+            )
             
             valor_aposta = None
             roi_esperado = None
@@ -549,25 +600,14 @@ class TennisPredicaoAnalyzer:
     
     def _calcular_metricas_aposta(self, winner: str, prob: float, p1: str, p2: str,
                                  odd1: float, odd2: float) -> Tuple[Optional[float], Optional[float]]:
-        """Calcula métricas de aposta (Kelly Criterion)"""
+        """Calcula métricas de aposta (Kelly fracionado sobre probabilidades calibradas)."""
         try:
             odd_vencedor = odd1 if winner == p1 else odd2
-            
+
             if not odd_vencedor or odd_vencedor <= 0:
                 return 0, None
-            
-            prob_implicita = 1 / odd_vencedor
-            
-            if prob > prob_implicita and odd_vencedor > 1:
-                valor_aposta = (prob * odd_vencedor - 1) / (odd_vencedor - 1)
-                roi_esperado = prob * (odd_vencedor - 1) - (1 - prob)
-                
-                if pd.isna(valor_aposta) or pd.isna(roi_esperado):
-                    return 0, 0
-                
-                return max(0, min(round(valor_aposta, 3), 1)), round(roi_esperado, 3)
-            
-            return 0, 0
+
+            return calcular_stake_kelly(prob, odd_vencedor)
         except (ZeroDivisionError, TypeError, ValueError):
             return 0, 0
     
@@ -952,7 +992,7 @@ def main():
     """Função principal do script"""
     try:
         logger.info("=" * 60)
-        logger.info("🎾 NeuroTennis - Sistema de Previsão de Ténis")
+        logger.info("🎾 VolatusTennis - Sistema de Previsão de Ténis")
         logger.info("=" * 60)
         
         # 1. Importar modelo de previsão
@@ -961,28 +1001,16 @@ def main():
         from model_elo_xgboost import TennisPredictor
         
         predictor = TennisPredictor()
-        
-        # Verificar se modelo existe
-        model_files = [
-            'tennis_surface_elo_model_xgboost.pkl',
-            'tennis_surface_elo_scaler_xgboost.pkl',
-            'tennis_surface_elo_data_xgboost.pkl'
-        ]
-        
-        if all(os.path.exists(os.path.join(MODEL_PATH, f)) for f in model_files):
-            logger.info("✅ Modelo encontrado. Carregando...")
-            if not predictor.load_saved_model():
-                logger.warning("⚠️ Falha ao carregar. Treinando novo...")
-                predictor.load_data()
-                df = predictor.preprocess_data()
-                predictor.train_model(df)
-                predictor.save_model()
-        else:
-            logger.info("⚠️ Nenhum modelo encontrado. Treinando novo...")
-            predictor.load_data()
-            df = predictor.preprocess_data()
-            predictor.train_model(df)
-            predictor.save_model()
+
+        # O engine só carrega o modelo; o treino é feito com `python src/train_model.py`.
+        if not predictor.load_saved_model(MODEL_PATH):
+            mensagem_erro = (f"❌ Modelo não encontrado ou inválido em '{MODEL_PATH}'. "
+                             "Treine com: python src/train_model.py")
+            logger.error(mensagem_erro)
+            if TOKEN_BOT and CHAT_ID:
+                enviar_telegram(f"⚠️ VolatusTennis: previsões não geradas. {mensagem_erro}", TOKEN_BOT, CHAT_ID)
+            sys.exit(1)
+        logger.info("✅ Modelo carregado.")
         
         # 2. Scraping dos jogos
         logger.info("\n🕷️ Iniciando scraping de jogos...")

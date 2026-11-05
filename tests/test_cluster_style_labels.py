@@ -17,8 +17,8 @@ def test_merge_similar_clusters_reduces_near_duplicate_profiles() -> None:
 
     merged = merge_similar_clusters(frame, feature_columns=["ace_rate", "service_hold_rate", "return_points_won_pct"])
 
+    # Os labels de estilo são atribuídos depois, em build_cluster_profile; aqui só se testa o merge.
     assert merged["cluster"].nunique() == 1
-    assert merged["style_label"].nunique() == 1
 
 
 def test_choose_best_cluster_row_prefers_lower_k_when_scores_are_similar() -> None:

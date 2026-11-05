@@ -1,0 +1,16 @@
+{
+    "name": "VolatusTennis - Previsões de ténis ATP",
+    "short_name": "VolatusTennis",
+    "description": "Previsões diárias de ténis ATP com machine learning.",
+    "lang": "pt-PT",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#0c0b14",
+    "theme_color": "#0c0b14",
+    "icons": [
+        { "src": "img/icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png" },
+        { "src": "img/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    ]
+}

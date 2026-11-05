@@ -2,36 +2,67 @@ import os
 import pandas as pd
 import numpy as np
 import joblib
-from datetime import datetime
-from sklearn.metrics import accuracy_score, f1_score, classification_report, log_loss, brier_score_loss, mean_absolute_error, r2_score, balanced_accuracy_score
+from sklearn.metrics import accuracy_score, f1_score, classification_report, log_loss, brier_score_loss, balanced_accuracy_score, roc_auc_score
 from xgboost import XGBClassifier
 import optuna
 from dotenv import load_dotenv
 from sklearn.model_selection import TimeSeriesSplit
 
+try:
+    from match_policy import add_policy_columns, sort_matches
+    from features import FEATURE_GROUPS, FeatureBuilder
+    from evaluation import (ATP_LEVELS, apply_calibration, baseline_metrics, expected_calibration_error,
+                            fit_calibrator, probability_metrics, reliability_table, select_calibration_method)
+except ImportError:
+    from src.match_policy import add_policy_columns, sort_matches
+    from src.features import FEATURE_GROUPS, FeatureBuilder
+    from src.evaluation import (ATP_LEVELS, apply_calibration, baseline_metrics, expected_calibration_error,
+                                fit_calibrator, probability_metrics, reliability_table, select_calibration_method)
+
 load_dotenv()
 
-MODEL_PATH = os.getenv('MODEL_PATH')
-DATA_PATH = os.getenv('DATA_PATH')
+MODEL_PATH = os.getenv('MODEL_PATH', 'models')
+
+MODEL_FILENAME = 'tennis_surface_elo_model_xgboost.pkl'
+DATA_FILENAME = 'tennis_surface_elo_data_xgboost.pkl'
+STATE_VERSION = 2  # v2: estado incremental (features.FeatureBuilder) em vez do histórico completo
+
+# Colunas categóricas codificadas com one-hot, iguais no treino e na previsão
+CATEGORICAL_COLUMNS = ['surface', 'tourney_level']
+# Colunas do DataFrame de features que não entram no modelo
+NON_FEATURE_COLUMNS = ['date', 'target', 'match_idx']
+QUALIFYING_ROUNDS = ('Q1', 'Q2', 'Q3', 'Q4')
+
+
+def features_for_groups(groups):
+    """Lista de colunas de features pertencentes aos grupos indicados (ver features.FEATURE_GROUPS)."""
+    unknown = set(groups) - set(FEATURE_GROUPS)
+    if unknown:
+        raise ValueError(f"Grupos de features desconhecidos: {sorted(unknown)}")
+    return [col for group in groups for col in FEATURE_GROUPS[group]]
+
 
 class TennisPredictor:
     def __init__(self):
         """Inicializa todos os atributos necessários"""
         self.model = None
         self.matches = None
-        self.player_history = {}  # Histórico de ELO por jogador
-        self.h2h_data = {}        # Dados head-to-head
-        self.surface_stats = {}   # Estatísticas por superfície
-        self.player_profiles = {} # Histórico de ranking/idade por jogador
+        self.feature_builder = FeatureBuilder()  # Estado dos jogadores (ELO, forma, stats, H2H...)
+        self.swap_features = None     # Features na perspetiva trocada (avaliação simétrica no treino)
         self.decision_threshold = 0.5  # Threshold de decisão para escolha binária de vencedor
         self.threshold_profiles = {}  # Perfis de threshold ativos
         self.feature_columns = None  # Colunas usadas no modelo
+        self.excluded_features = []  # Features retiradas (ablação)
+        self.last_match_date = None  # Data do jogo mais recente visto no treino
+        self.training_metrics = {}   # Métricas do último treino
+        self.calibrator = None       # Calibrador de probabilidades (ver evaluation.py)
 
-    def load_data(self, db_path: str | None = None):
+    def load_data(self, db_path: str | None = None, start_date: str | None = None, end_date: str | None = None):
         """Carrega os dados das partidas a partir da base de dados SQLite.
 
         Por defeito usa o ficheiro SQLite `datasets/tennis_data.db` (ver `DB_PATH` env),
         mas pode passar-se um `db_path` alternativo (útil para testes).
+        `start_date` (inclusivo) e `end_date` (exclusivo) filtram por `tourney_date` (YYYY-MM-DD).
         """
         print("Carregando dados de partidas a partir da base de dados SQLite...")
         try:
@@ -41,404 +72,124 @@ class TennisPredictor:
             from src.db import get_connection, load_matches_for_training
 
         conn = get_connection(db_path)
-        # Carregar e normalizar colunas esperadas pelo pipeline atual
-        self.matches = load_matches_for_training(conn)
+        self.matches = load_matches_for_training(conn, start_date=start_date, end_date=end_date)
         conn.close()
 
-        # Verificar colunas essenciais (compatibilidade com o código existente)
-        required_cols = ['winner_name', 'loser_name', 'surface', 'tourney_date',
-                        'winner_surface_elo', 'loser_surface_elo']
+        required_cols = ['winner_name', 'loser_name', 'surface', 'tourney_date']
         if not all(col in self.matches.columns for col in required_cols):
             raise ValueError("Dataset na BD não contém todas as colunas necessárias")
 
         print(f"Dados carregados da BD: {len(self.matches)} partidas")
 
     def preprocess_data(self):
-        """Prepara e processa os dados para treinamento"""
+        """Uma passagem cronológica: features com o estado antes de cada jogo, depois atualiza o estado.
+
+        Devolve um DataFrame com uma linha por jogo (perspetiva aleatória) e guarda em
+        `self.swap_features` a perspetiva trocada de cada jogo, usada na avaliação simétrica.
+        """
         print("\nPreprocessando dados...")
-        
-        # Inicializar estruturas de dados
-        self.player_history = {}
-        self.h2h_data = {}
-        self.surface_stats = {}
-        self.player_profiles = {}
-        self.threshold_profiles = {}
-        
-        # Filtrar partidas válidas
-        valid_matches = self.matches[
-            (self.matches['winner_name'].notna()) & 
-            (self.matches['loser_name'].notna()) &
-            (self.matches['surface'].notna()) &
-            (self.matches['winner_surface_elo'].notna()) &
-            (self.matches['loser_surface_elo'].notna())
-        ].copy()
-        
-        # Ordenar por data para processamento temporal
-        valid_matches = valid_matches.sort_values('tourney_date')
+        matches = self.matches[
+            self.matches['winner_name'].notna()
+            & self.matches['loser_name'].notna()
+            & self.matches['surface'].notna()
+        ]
 
-        # Garantir coluna de nível de torneio para engenharia de features.
-        if 'tourney_level' not in valid_matches.columns:
-            valid_matches['tourney_level'] = 'UNK'
-        valid_matches['tourney_level'] = valid_matches['tourney_level'].fillna('UNK').astype(str)
-        
-        # Construir H2H apenas uma vez antes de extrair features
-        self.build_h2h_data(valid_matches)
+        # Política de jogos especiais: W/O e exibições ficam fora do histórico;
+        # abandonos entram no histórico mas não são exemplos de treino.
+        matches = add_policy_columns(matches)
+        excluded = int((~matches['counts_for_history']).sum())
+        matches = matches[matches['counts_for_history']]
+        print(f"Jogos fora do histórico (W/O, exibições): {excluded} | "
+              f"fora do treino (abandonos): {int((~matches['training_target']).sum())}")
 
+        # Ordem cronológica: data do torneio, torneio, ronda, match_num
+        matches = sort_matches(matches)
+        if 'tourney_level' not in matches.columns:
+            matches['tourney_level'] = 'UNK'
+        matches['tourney_level'] = matches['tourney_level'].fillna('UNK').astype(str)
+
+        builder = FeatureBuilder()
         rng = np.random.default_rng(42)
+        main_rows, swap_rows = [], []
 
-        # Processar cada partida
-        features = []
-        for _, row in valid_matches.iterrows():
-            # Processar estatísticas
-            self._process_match_stats(row)
-            
-            # Obter ELOs antes da partida
-            winner_elo_pre = self._get_elo_before_match(row['winner_name'], row['surface'], row['tourney_date'])
-            loser_elo_pre = self._get_elo_before_match(row['loser_name'], row['surface'], row['tourney_date'])
-            
-            if pd.isna(winner_elo_pre) or pd.isna(loser_elo_pre):
-                continue
-            # Uma única linha por partida para evitar leakage entre perspetivas.
-            if rng.random() < 0.5:
-                features.append(self._extract_features(
-                    row, perspective='winner',
-                    player_elo=winner_elo_pre,
-                    opponent_elo=loser_elo_pre,
-                    target=1
-                ))
-            else:
-                features.append(self._extract_features(
-                    row, perspective='loser',
-                    player_elo=loser_elo_pre,
-                    opponent_elo=winner_elo_pre,
-                    target=0
-                ))
-        
-        # Criar DataFrame de features
-        df = pd.DataFrame([f for f in features if f is not None])
-        self.feature_columns = df.drop(['target'], axis=1).columns.tolist()
-        
+        for match_idx, row in enumerate(matches.to_dict(orient='records')):
+            if row['training_target']:
+                context = {
+                    'surface': row['surface'],
+                    'tourney_level': row['tourney_level'],
+                    'date': row['tourney_date'],
+                    'best_of': row.get('best_of', 3),
+                    'is_qualifying': int(str(row.get('round', '')).upper() in QUALIFYING_ROUNDS),
+                }
+                winner_view = builder.features(
+                    row['winner_name'], row['loser_name'], **context,
+                    player_rank=row.get('winner_rank'), opponent_rank=row.get('loser_rank'),
+                    player_rank_points=row.get('winner_rank_points'), opponent_rank_points=row.get('loser_rank_points'),
+                    player_age=row.get('winner_age'), opponent_age=row.get('loser_age'),
+                )
+                loser_view = builder.features(
+                    row['loser_name'], row['winner_name'], **context,
+                    player_rank=row.get('loser_rank'), opponent_rank=row.get('winner_rank'),
+                    player_rank_points=row.get('loser_rank_points'), opponent_rank_points=row.get('winner_rank_points'),
+                    player_age=row.get('loser_age'), opponent_age=row.get('winner_age'),
+                )
+                # Uma linha de treino por jogo (perspetiva aleatória); a outra só para avaliação simétrica
+                if rng.random() < 0.5:
+                    main, swap, target = winner_view, loser_view, 1
+                else:
+                    main, swap, target = loser_view, winner_view, 0
+                main_rows.append({'date': row['tourney_date'], 'match_idx': match_idx, **main, 'target': target})
+                swap_rows.append({'date': row['tourney_date'], 'match_idx': match_idx, **swap, 'target': 1 - target})
+            builder.update(row)
+
+        self.feature_builder = builder
+        df = pd.DataFrame(main_rows)
+        self.swap_features = pd.DataFrame(swap_rows).set_index('match_idx', drop=False)
         print(f"\nDistribuição de classes:\n{df['target'].value_counts(normalize=True)}")
         return df
-
-    def _process_match_stats(self, row):
-        """Processa estatísticas de uma partida e atualiza as estruturas de dados"""
-        winner = row['winner_name']
-        loser = row['loser_name']
-        surface = row['surface']
-        date = row['tourney_date']
-        
-        # Atualizar histórico de jogadores
-        for player, is_winner in [(winner, True), (loser, False)]:
-            if player not in self.player_history:
-                self.player_history[player] = []
-            
-            self.player_history[player].append({
-                'date': date,
-                'surface': surface,
-                'elo_after': row['winner_surface_elo'] if is_winner else row['loser_surface_elo'],
-                'result': 'win' if is_winner else 'loss'
-            })
-
-        # Atualizar perfil (ranking/idade) para previsão e features adicionais
-        winner_rank = row.get('winner_rank') if 'winner_rank' in row.index else np.nan
-        loser_rank = row.get('loser_rank') if 'loser_rank' in row.index else np.nan
-        winner_rank_points = row.get('winner_rank_points') if 'winner_rank_points' in row.index else np.nan
-        loser_rank_points = row.get('loser_rank_points') if 'loser_rank_points' in row.index else np.nan
-        winner_age = row.get('winner_age') if 'winner_age' in row.index else np.nan
-        loser_age = row.get('loser_age') if 'loser_age' in row.index else np.nan
-
-        for player, rank, rank_points, age in [
-            (winner, winner_rank, winner_rank_points, winner_age),
-            (loser, loser_rank, loser_rank_points, loser_age)
-        ]:
-            if player not in self.player_profiles:
-                self.player_profiles[player] = []
-            self.player_profiles[player].append({
-                'date': date,
-                'rank': rank,
-                'rank_points': rank_points,
-                'age': age
-            })
-        # Atualizar estatísticas por superfície
-        for player, is_winner in [(winner, True), (loser, False)]:
-            if player not in self.surface_stats:
-                self.surface_stats[player] = {}
-            if surface not in self.surface_stats[player]:
-                self.surface_stats[player][surface] = {'wins': 0, 'losses': 0}
-            
-            if is_winner:
-                self.surface_stats[player][surface]['wins'] += 1
-            else:
-                self.surface_stats[player][surface]['losses'] += 1
-
-    def build_h2h_data(self, matches):
-        """Constrói o histórico head-to-head conforme sua estrutura solicitada"""
-        print("Construindo histórico H2H...")
-        self.h2h_data = {}
-        
-        for _, row in matches.iterrows():
-            winner = row['winner_name']
-            loser = row['loser_name']
-            date = row['tourney_date']
-            
-            # Atualizar registro do vencedor
-            if winner not in self.h2h_data:
-                self.h2h_data[winner] = {}
-            if loser not in self.h2h_data[winner]:
-                self.h2h_data[winner][loser] = {'w': 0, 'l': 0, 'matches': []}
-            self.h2h_data[winner][loser]['w'] += 1
-            self.h2h_data[winner][loser]['matches'].append({'date': date, 'result': 'win'})
-            
-            # Atualizar registro do perdedor
-            if loser not in self.h2h_data:
-                self.h2h_data[loser] = {}
-            if winner not in self.h2h_data[loser]:
-                self.h2h_data[loser][winner] = {'w': 0, 'l': 0, 'matches': []}
-            self.h2h_data[loser][winner]['l'] += 1
-            self.h2h_data[loser][winner]['matches'].append({'date': date, 'result': 'loss'})
 
     def _format_h2h(self, player1, player2, h2h):
         """Formata o H2H para exibição"""
         total = h2h['w'] + h2h['l']
         if total == 0:
             return "Igual (sem confrontos anteriores)"
-        
+
         percentage = h2h['w'] / total
         return f"{h2h['w']}-{h2h['l']} ({percentage:.0%} para {player1})"
 
-    def _get_elo_before_match(self, player, surface, date):
-        """Obtém o ELO do jogador antes da partida atual"""
-        # Para a primeira partida do jogador, usar valor inicial (1500 ou outro)
-        if player not in self.player_history:
-            return 1500
-        
-        # Obter o ELO mais recente antes da data atual
-        player_matches = self.player_history[player]
-        surface_matches = [m for m in player_matches if m['surface'] == surface and m['date'] < date]
-        
-        if not surface_matches:
-            return 1500  # Valor inicial se não houver partidas anteriores nessa superfície
-        
-        # Retornar o ELO após a última partida (que será o ELO antes da atual)
-        return sorted(surface_matches, key=lambda x: x['date'])[-1]['elo_after']
+    def _to_model_matrix(self, df, expected_columns=None):
+        """Converte o DataFrame de features na matriz do modelo (one-hot + alinhamento de colunas)."""
+        drop = [c for c in NON_FEATURE_COLUMNS + list(self.excluded_features) if c in df.columns]
+        X = df.drop(columns=drop)
+        categorical_cols = [c for c in CATEGORICAL_COLUMNS if c in X.columns]
+        if categorical_cols:
+            X = pd.get_dummies(X, columns=categorical_cols)
+        if expected_columns is not None:
+            X = X.reindex(columns=expected_columns, fill_value=0)
+        return X.astype(float)
 
-    def _update_player_history(self, row):
-        """Atualiza o histórico com os ELOs após esta partida"""
-        winner = row['winner_name']
-        loser = row['loser_name']
-        date = row['tourney_date']
-        surface = row['surface']
-        
-        # Atualizar vencedor
-        if winner not in self.player_history:
-            self.player_history[winner] = []
-        self.player_history[winner].append({
-            'date': date,
-            'surface': surface,
-            'elo_before': self._get_elo_before_match(winner, surface, date),
-            'elo_after': row['winner_surface_elo'],
-            'opponent': loser,
-            'result': 'win'
-        })
-        
-        # Atualizar perdedor
-        if loser not in self.player_history:
-            self.player_history[loser] = []
-        self.player_history[loser].append({
-            'date': date,
-            'surface': surface,
-            'elo_before': self._get_elo_before_match(loser, surface, date),
-            'elo_after': row['loser_surface_elo'],
-            'opponent': winner,
-            'result': 'loss'
-        })
+    def _symmetric_proba(self, model, block):
+        """P(jogador da linha ganha) = média de p(A,B) e 1 − p(B,A), usando a perspetiva trocada."""
+        p_main = model.predict_proba(self._to_model_matrix(block, self.feature_columns))[:, 1]
+        if self.swap_features is None:
+            return p_main
+        swap = self.swap_features.loc[block['match_idx'].to_numpy()]
+        p_swap = model.predict_proba(self._to_model_matrix(swap, self.feature_columns))[:, 1]
+        return (p_main + 1 - p_swap) / 2
 
-    def _extract_features(self, row, perspective, player_elo, opponent_elo, target):
-        """Extrai features para uma partida com todos os argumentos necessários"""
-        if perspective == 'winner':
-            player = row['winner_name']
-            opponent = row['loser_name']
-            player_rank_raw = row.get('winner_rank')
-            opponent_rank_raw = row.get('loser_rank')
-            player_rank_points_raw = row.get('winner_rank_points')
-            opponent_rank_points_raw = row.get('loser_rank_points')
-            player_age_raw = row.get('winner_age')
-            opponent_age_raw = row.get('loser_age')
-        else:
-            player = row['loser_name']
-            opponent = row['winner_name']
-            player_rank_raw = row.get('loser_rank')
-            opponent_rank_raw = row.get('winner_rank')
-            player_rank_points_raw = row.get('loser_rank_points')
-            opponent_rank_points_raw = row.get('winner_rank_points')
-            player_age_raw = row.get('loser_age')
-            opponent_age_raw = row.get('winner_age')
-        
-        surface = row['surface']
-        tourney_level = row.get('tourney_level', 'UNK')
-        date = row['tourney_date']
-        
-        # Head-to-head até antes desta partida
-        h2h = self._get_h2h_stats_before_match(player, opponent, date)
-        h2h_total = h2h['w'] + h2h['l']
-        h2h_win_rate = h2h['w'] / h2h_total if h2h_total > 0 else 0.5
+    def train_model(self, df, refit_full: bool = True, exclude_features=None, fixed_params=None):
+        """Treina modelo XGBoost com validação temporal e busca de hiperparâmetros com Optuna.
 
-        player_rank, opponent_rank = self._coalesce_pair(player_rank_raw, opponent_rank_raw)
-        player_rank_points, opponent_rank_points = self._coalesce_pair(
-            player_rank_points_raw,
-            opponent_rank_points_raw
-        )
-        player_age, opponent_age = self._coalesce_pair(player_age_raw, opponent_age_raw)
-        
-        # Estatísticas por superfície até antes desta partida
-        player_stats = self._get_surface_stats_before(player, surface, date)
-        opponent_stats = self._get_surface_stats_before(opponent, surface, date)
-        recent_win_diffs = {
-            f'win_last_{window}_diff': self._get_recent_wins(player, date, window)
-            - self._get_recent_wins(opponent, date, window)
-            for window in (3, 5, 10, 25, 50)
-        }
-        
-        return {
-            'date': date,
-            'player_elo': player_elo,
-            'opponent_elo': opponent_elo,
-            'elo_diff': player_elo - opponent_elo,
-            'player_rank': player_rank,
-            'opponent_rank': opponent_rank,
-            'rank_diff': self._pairwise_diff(player_rank, opponent_rank),
-            'rank_advantage': opponent_rank - player_rank,
-            'player_rank_points': player_rank_points,
-            'opponent_rank_points': opponent_rank_points,
-            'rank_points_diff': self._pairwise_diff(player_rank_points, opponent_rank_points),
-            'rank_points_advantage': player_rank_points - opponent_rank_points,
-            'player_age': player_age,
-            'opponent_age': opponent_age,
-            'age_diff': player_age - opponent_age,
-            'h2h_win_rate': h2h_win_rate,
-            'h2h_diff': 2 * h2h_win_rate - 1,
-            'h2h_matches': h2h_total,
-            'player_surface_win_rate': player_stats['win_rate'],
-            'player_surface_matches': player_stats['total_matches'],
-            'opponent_surface_win_rate': opponent_stats['win_rate'],
-            'opponent_surface_matches': opponent_stats['total_matches'],
-            'surface_win_rate_diff': self._pairwise_diff(
-                player_stats['win_rate'], opponent_stats['win_rate']
-            ),
-            'surface_matches_diff': self._pairwise_diff(
-                player_stats['total_matches'], opponent_stats['total_matches']
-            ),
-            **recent_win_diffs,
-            'surface': surface,
-            'tourney_level': str(tourney_level) if pd.notna(tourney_level) else 'UNK',
-            'target': target
-        }
+        Avalia num holdout temporal (15% mais recentes) com previsões simétricas e calibradas e,
+        com `refit_full`, volta a treinar o modelo de produção com todos os dados.
+        `exclude_features` retira colunas (ablação); `fixed_params` salta o Optuna e usa esses
+        hiperparâmetros. Devolve um dicionário de métricas do holdout.
+        """
+        self.excluded_features = list(exclude_features or [])
 
-    def _get_h2h_stats_before_match(self, player1, player2, date):
-        """Calcula H2H (vitórias e derrotas) até antes de uma data específica"""
-        if player1 not in self.h2h_data or player2 not in self.h2h_data[player1]:
-            return {'w': 0, 'l': 0}
-    
-        # Se não houver data especificada, retorna todo o histórico
-        if date is None:
-            return {
-                'w': self.h2h_data[player1][player2]['w'],
-                'l': self.h2h_data[player1][player2]['l']
-            }
-        
-        # Filtra partidas anteriores à data especificada
-        matches = [m for m in self.h2h_data[player1][player2]['matches'] if m['date'] < date]
-        wins = sum(1 for m in matches if m['result'] == 'win')
-        losses = sum(1 for m in matches if m['result'] == 'loss')
-        
-        return {'w': wins, 'l': losses}
-
-    def _get_surface_stats_before(self, player, surface, date):
-        """Calcula estatísticas por superfície até antes de uma data"""
-        wins = losses = 0
-        
-        if player not in self.player_history:
-            return {'win_rate': 0.5, 'total_matches': 0}
-            
-        for match in self.player_history[player]:
-            if match['date'] < date and match['surface'] == surface:
-                if match['result'] == 'win':
-                    wins += 1
-                else:
-                    losses += 1
-                    
-        total = wins + losses
-        return {
-            'win_rate': wins / total if total > 0 else 0.5,
-            'total_matches': total
-        }
-
-    def _get_recent_wins(self, player, date, window):
-        """Conta vitórias nos últimos jogos do jogador antes da partida."""
-        if player not in self.player_history:
-            return 0
-
-        previous_matches = [
-            match for match in self.player_history[player]
-            if match['date'] < date
-        ]
-        return sum(match['result'] == 'win' for match in previous_matches[-window:])
-    
-    def _load_historical_data(self):
-        """Carrega apenas os dados necessários para previsões"""
-        try:
-            data = joblib.load(os.path.join(MODEL_PATH, 'tennis_surface_elo_data_xgboost.pkl'))
-            self.player_history = data.get('player_history', {})
-            self.h2h_data = data.get('h2h_data', {})
-            self.surface_stats = data.get('surface_stats', {})
-            self.player_profiles = data.get('player_profiles', {})
-        except Exception as e:
-            print(f"Erro ao carregar dados históricos: {str(e)}")
-            self.player_history = {}
-            self.h2h_data = {}
-            self.surface_stats = {}
-            self.player_profiles = {}
-
-    def _coalesce_pair(self, player_value, opponent_value):
-        """Preserva NaNs para aproveitar o tratamento nativo do XGBoost."""
-        player_clean = np.nan if pd.isna(player_value) else float(player_value)
-        opponent_clean = np.nan if pd.isna(opponent_value) else float(opponent_value)
-        return player_clean, opponent_clean
-
-    def _pairwise_diff(self, player_value, opponent_value):
-        """Calcula uma diferença sem transformar NaNs em valores artificiais."""
-        if pd.isna(player_value) or pd.isna(opponent_value):
-            return np.nan
-        return float(player_value) - float(opponent_value)
-
-    def _get_player_profile_value_before(self, player, field, date, default):
-        """Obtém o valor mais recente de um atributo do jogador antes de uma data."""
-        if player not in self.player_profiles:
-            return np.nan if default is None else float(default)
-
-        valid_values = [
-            entry.get(field)
-            for entry in self.player_profiles[player]
-            if entry.get('date') is not None and entry.get('date') < date and pd.notna(entry.get(field))
-        ]
-        if not valid_values:
-            return np.nan if default is None else float(default)
-        return float(valid_values[-1])
-
-    def _get_latest_match_date(self, player1, player2):
-        """Obtém a data mais recente em que qualquer um dos jogadores participou"""
-        dates = []
-        for player in [player1, player2]:
-            if player in self.player_history:
-                dates.extend([match['date'] for match in self.player_history[player] if match['date']])
-        return max(dates) if dates else None
-
-    def train_model(self, df):
-        """Treina modelo XGBoost com validação temporal e busca de hiperparâmetros com Optuna"""
-        
-        # Ordenar por data
-        df = df.sort_values('date').reset_index(drop=True)
+        # Ordenar por data (estável: mantém a ordem cronológica do preprocessamento)
+        df = df.sort_values('date', kind='mergesort').reset_index(drop=True)
+        self.last_match_date = df['date'].max()
 
         # Split temporal global:
         # - 85% inicial para desenvolvimento (train + validação cruzada temporal)
@@ -449,20 +200,8 @@ class TennisPredictor:
         test = df.iloc[dev_end:].reset_index(drop=True)
 
         # Features e target
-        cols_to_drop = ['date', 'target']
-        for col in ['player', 'opponent']:
-            if col in df.columns:
-                cols_to_drop.append(col)
-
         def prepare_Xy(dataset, expected_columns=None):
-            X = dataset.drop(cols_to_drop, axis=1)
-            categorical_cols = [c for c in ['surface', 'tourney_level'] if c in X.columns]
-            if categorical_cols:
-                X = pd.get_dummies(X, columns=categorical_cols)
-            if expected_columns is not None:
-                X = X.reindex(columns=expected_columns, fill_value=0)
-            y = dataset['target']
-            return X, y
+            return self._to_model_matrix(dataset, expected_columns), dataset['target']
 
         X_dev_raw, y_dev = prepare_Xy(dev)
         self.feature_columns = X_dev_raw.columns.tolist()
@@ -483,6 +222,14 @@ class TennisPredictor:
             'n_jobs': -1
         }
 
+        def fit_with_early_stopping(model, X_train, y_train, X_val, y_val, verbose=False):
+            try:
+                model.fit(X_train, y_train, eval_set=[(X_val, y_val)], early_stopping_rounds=50, verbose=verbose)
+            except TypeError:
+                model.set_params(early_stopping_rounds=50)
+                model.fit(X_train, y_train, eval_set=[(X_val, y_val)], verbose=verbose)
+            return model
+
         def objective(trial):
             trial_params = {
                 'learning_rate': trial.suggest_float('learning_rate', 0.01, 0.08, log=True),
@@ -496,74 +243,52 @@ class TennisPredictor:
                 'max_delta_step': trial.suggest_int('max_delta_step', 0, 2)
             }
 
-            tscv = TimeSeriesSplit(n_splits=4)
             fold_losses = []
-
-            for fold_train_idx, fold_val_idx in tscv.split(X_dev):
-                X_train_fold = X_dev.iloc[fold_train_idx]
-                y_train_fold = y_dev.iloc[fold_train_idx]
-                X_val_fold = X_dev.iloc[fold_val_idx]
-                y_val_fold = y_dev.iloc[fold_val_idx]
-
-                model = XGBClassifier(**base_params, **trial_params)
-                try:
-                    model.fit(
-                        X_train_fold,
-                        y_train_fold,
-                        eval_set=[(X_val_fold, y_val_fold)],
-                        early_stopping_rounds=50,
-                        verbose=False
-                    )
-                except TypeError:
-                    model.set_params(early_stopping_rounds=50)
-                    model.fit(
-                        X_train_fold,
-                        y_train_fold,
-                        eval_set=[(X_val_fold, y_val_fold)],
-                        verbose=False
-                    )
-
-                y_val_proba = model.predict_proba(X_val_fold)[:, 1]
-                fold_losses.append(log_loss(y_val_fold, y_val_proba))
-
+            for fold_train_idx, fold_val_idx in TimeSeriesSplit(n_splits=4).split(X_dev):
+                model = fit_with_early_stopping(
+                    XGBClassifier(**base_params, **trial_params),
+                    X_dev.iloc[fold_train_idx], y_dev.iloc[fold_train_idx],
+                    X_dev.iloc[fold_val_idx], y_dev.iloc[fold_val_idx],
+                )
+                y_val_proba = model.predict_proba(X_dev.iloc[fold_val_idx])[:, 1]
+                fold_losses.append(log_loss(y_dev.iloc[fold_val_idx], y_val_proba))
             return float(np.mean(fold_losses))
 
-        study = optuna.create_study(
-            direction='minimize',
-            sampler=optuna.samplers.TPESampler(seed=42)
-        )
-        try:
-            study.optimize(objective, n_trials=optuna_trials, show_progress_bar=False)
-        except KeyboardInterrupt:
-            completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
-            if not completed:
-                raise
-            print(f"\nBusca interrompida pelo utilizador. A usar melhor trial entre {len(completed)} trials concluídos.")
+        if fixed_params:
+            best_params = dict(fixed_params)
+            print("Hiperparâmetros fixos (sem Optuna):", best_params)
+        else:
+            study = optuna.create_study(
+                direction='minimize',
+                sampler=optuna.samplers.TPESampler(seed=42)
+            )
+            try:
+                study.optimize(objective, n_trials=optuna_trials, show_progress_bar=False)
+            except KeyboardInterrupt:
+                completed = [t for t in study.trials if t.state == optuna.trial.TrialState.COMPLETE]
+                if not completed:
+                    raise
+                print(f"\nBusca interrompida pelo utilizador. A usar melhor trial entre {len(completed)} trials concluídos.")
+            best_params = study.best_params
+            print("Melhores parâmetros encontrados:", best_params)
+            print(f"Melhor logloss médio de validação temporal (Optuna): {study.best_value:.5f}")
 
-        params = {**base_params, **study.best_params}
-        print("Melhores parâmetros encontrados:", study.best_params)
-        print(f"Melhor logloss médio de validação temporal (Optuna): {study.best_value:.5f}")
+        params = {**base_params, **best_params}
 
-        # Split final dentro do bloco de desenvolvimento para early stopping
-        final_train_end = int(0.9 * len(dev))
+        # Split final dentro do bloco de desenvolvimento (por ordem temporal):
+        # 80% treino | 10% validação (early stopping) | 10% calibração das probabilidades
+        final_train_end = int(0.8 * len(dev))
+        final_val_end = int(0.9 * len(dev))
         final_train = dev.iloc[:final_train_end].reset_index(drop=True)
-        final_val = dev.iloc[final_train_end:].reset_index(drop=True)
+        final_val = dev.iloc[final_train_end:final_val_end].reset_index(drop=True)
+        calib = dev.iloc[final_val_end:].reset_index(drop=True)
 
         X_train_final, y_train_final = prepare_Xy(final_train, expected_columns=self.feature_columns)
         X_val_final, y_val_final = prepare_Xy(final_val, expected_columns=self.feature_columns)
 
-        self.model = XGBClassifier(**params)
-        try:
-            self.model.fit(X_train_final, y_train_final,
-                           eval_set=[(X_val_final, y_val_final)],
-                           early_stopping_rounds=50,
-                            verbose=50)
-        except TypeError:
-            self.model.set_params(early_stopping_rounds=50)
-            self.model.fit(X_train_final, y_train_final,
-                           eval_set=[(X_val_final, y_val_final)],
-                            verbose=50)
-                        
+        self.model = fit_with_early_stopping(
+            XGBClassifier(**params), X_train_final, y_train_final, X_val_final, y_val_final, verbose=50
+        )
         best_iteration = getattr(self.model, 'best_iteration', None)
         if best_iteration is not None and best_iteration >= 0:
             self.model.set_params(n_estimators=best_iteration + 1)
@@ -571,10 +296,8 @@ class TennisPredictor:
         else:
             print("\nEarly stopping não retornou best_iteration; mantendo n_estimators atual.")
 
-        # Mantém threshold binário fixo para decisão de vencedor,
-        # enquanto a otimização do modelo permanece orientada a LogLoss.
-        val_proba = self.model.predict_proba(X_val_final)[:, 1]
-        threshold_strategy = os.getenv('THRESHOLD_STRATEGY', 'default_050').strip().lower()
+        # Threshold binário fixo; o modelo é otimizado para LogLoss.
+        val_proba = self._symmetric_proba(self.model, final_val)
         self.threshold_profiles = {
             'default_050': {
                 'threshold': 0.5,
@@ -582,265 +305,249 @@ class TennisPredictor:
                 'val_brier': float(brier_score_loss(y_val_final, val_proba))
             }
         }
-        if threshold_strategy not in self.threshold_profiles:
-            threshold_strategy = 'default_050'
-        self.decision_threshold = self.threshold_profiles[threshold_strategy]['threshold']
+        self.decision_threshold = 0.5
 
-        print("\nPerfil de threshold na validação final:")
-        print(
-            f"- default_050: thr={self.threshold_profiles['default_050']['threshold']:.2f} | "
-            f"LogLoss={self.threshold_profiles['default_050']['val_logloss']:.4f} | "
-            f"Brier={self.threshold_profiles['default_050']['val_brier']:.4f}"
+        # Calibração: escolhe o método na 2.ª metade do bloco de calibração (ajustado na 1.ª metade)
+        # e ajusta-o no bloco inteiro. O teste não entra na escolha.
+        y_calib = calib['target']
+        p_calib = self._symmetric_proba(self.model, calib)
+        half = len(calib) // 2
+        calibration_method, calibration_selection = select_calibration_method(
+            p_calib[:half], y_calib.iloc[:half], p_calib[half:], y_calib.iloc[half:]
         )
-        print(
-            f"Threshold ativo para produção ({threshold_strategy}): "
-            f"{self.decision_threshold:.2f}"
-        )
+        eval_calibrator = fit_calibrator(calibration_method, p_calib, y_calib)
+        print(f"\nCalibração escolhida: {calibration_method} "
+              f"(logloss no bloco de seleção: {calibration_selection[calibration_method]['logloss']:.4f})")
 
-        # Avaliação no conjunto de teste
-        X_test, y_test = prepare_Xy(test, expected_columns=self.feature_columns)
-        y_proba = self.model.predict_proba(X_test)[:, 1]
+        # Avaliação no conjunto de teste (previsões simétricas)
+        y_test = test['target']
+        y_proba_single = self.model.predict_proba(self._to_model_matrix(test, self.feature_columns))[:, 1]
+        y_proba_raw = self._symmetric_proba(self.model, test)
+        y_proba = apply_calibration(eval_calibrator, y_proba_raw)
         y_pred = (y_proba >= self.decision_threshold).astype(int)
-        y_pred_050 = (y_proba >= 0.50).astype(int)
-        f1_at_050 = f1_score(y_test, y_pred_050)
 
-        print("\n--- Avaliação Teste (dados mais recentes) ---")
-        print(f"Accuracy: {accuracy_score(y_test, y_pred):.3f}")
-        print(f"F1-score: {f1_score(y_test, y_pred):.3f}")
-        print(f"F1-score @0.50: {f1_at_050:.3f}")
-        print(f"Balanced Accuracy: {balanced_accuracy_score(y_test, y_pred):.3f}")
-        print(f"LogLoss: {log_loss(y_test, y_proba):.3f}")
-        print(f"Brier Score: {brier_score_loss(y_test, y_proba):.3f}")
+        # Subconjunto ATP (o que o site prevê) e baselines no mesmo conjunto
+        atp_mask = test['tourney_level'].isin(ATP_LEVELS).to_numpy()
+        test_atp = test[atp_mask]
+        metrics = {
+            'accuracy': float(accuracy_score(y_test, y_pred)),
+            'f1': float(f1_score(y_test, y_pred)),
+            'balanced_accuracy': float(balanced_accuracy_score(y_test, y_pred)),
+            'auc': float(roc_auc_score(y_test, y_proba)),
+            'logloss': float(log_loss(y_test, y_proba)),
+            'brier': float(brier_score_loss(y_test, y_proba)),
+            'ece': expected_calibration_error(y_test, y_proba),
+            'raw': probability_metrics(y_test, y_proba_raw),
+            'single_perspective': probability_metrics(y_test, y_proba_single),
+            'baselines': baseline_metrics(test, y_test),
+            'atp_only': {
+                'model': probability_metrics(y_test[atp_mask], y_proba[atp_mask]),
+                'baselines': baseline_metrics(test_atp, y_test[atp_mask]),
+            } if atp_mask.sum() > 0 else None,
+            'calibration': {
+                'method': calibration_method,
+                'selection': calibration_selection,
+                'reliability_test': reliability_table(y_test, y_proba),
+            },
+            'excluded_features': self.excluded_features,
+            'n_features': len(self.feature_columns),
+            'n_train': int(len(final_train)),
+            'n_val': int(len(final_val)),
+            'n_calib': int(len(calib)),
+            'n_test': int(len(test)),
+            'test_start': str(test['date'].min()),
+            'test_end': str(test['date'].max()),
+            'best_params': best_params,
+            'tuned_with_optuna': not fixed_params,
+        }
+
+        print("\n--- Avaliação Teste (dados mais recentes, previsões simétricas e calibradas) ---")
+        print(f"Accuracy: {metrics['accuracy']:.3f}")
+        print(f"AUC: {metrics['auc']:.3f}")
+        print(f"LogLoss: {metrics['logloss']:.4f} (sem calibração: {metrics['raw']['logloss']:.4f}, "
+              f"só uma perspetiva: {metrics['single_perspective']['logloss']:.4f})")
+        print(f"Brier Score: {metrics['brier']:.4f} (sem calibração: {metrics['raw']['brier']:.4f})")
+        print(f"ECE: {metrics['ece']:.4f} (sem calibração: {metrics['raw']['ece']:.4f})")
+        print("\nBaselines no mesmo teste:")
+        for name, values in metrics['baselines'].items():
+            print(f"- {name}: " + ", ".join(f"{k}={v:.4f}" for k, v in values.items() if isinstance(v, float)))
+        if metrics['atp_only']:
+            m = metrics['atp_only']['model']
+            print(f"\nSó ATP ({m['n']} jogos): accuracy={m['accuracy']:.3f} logloss={m['logloss']:.4f} "
+                  f"brier={m['brier']:.4f} ece={m['ece']:.4f}")
+            for name, values in metrics['atp_only']['baselines'].items():
+                print(f"- {name}: " + ", ".join(f"{k}={v:.4f}" for k, v in values.items() if isinstance(v, float)))
         print("Relatório de classificação:")
         print(classification_report(y_test, y_pred))
 
-        print("\nComparação rápida no teste por perfil de threshold:")
-        for profile_name, cfg in self.threshold_profiles.items():
-            thr = cfg['threshold']
-            y_pred_profile = (y_proba >= thr).astype(int)
-            print(
-                f"- {profile_name}: thr={thr:.2f} | "
-                f"F1={f1_score(y_test, y_pred_profile):.3f} | "
-                f"Macro-F1={f1_score(y_test, y_pred_profile, average='macro'):.3f} | "
-                f"BalAcc={balanced_accuracy_score(y_test, y_pred_profile):.3f}"
-            )
-
         # Importância das features
         if hasattr(self.model, 'feature_importances_'):
-            print("\nTop features:")
             feature_importance = pd.DataFrame({
                 'feature': self.feature_columns,
                 'importance': self.model.feature_importances_
             }).sort_values('importance', ascending=False)
-            print(feature_importance.head(10))
-    
-    def predict_match(self, player1, player2, surface, date=None, tourney_level='UNK'):
+            metrics['top_features'] = feature_importance.head(15).to_dict(orient='records')
+            print("\nTop features:")
+            print(feature_importance.head(15))
+
+        # Refit de produção com todos os dados (inclui validação e teste, os jogos mais recentes),
+        # mantendo o número de árvores encontrado pelo early stopping.
+        if refit_full:
+            final_estimators = int(self.model.get_params()['n_estimators'])
+            X_all, y_all = prepare_Xy(df, expected_columns=self.feature_columns)
+            full_params = {**params, 'n_estimators': final_estimators}
+            print(f"\nRefit final com 100% dos dados ({len(df)} jogos, {final_estimators} árvores)...")
+            self.model = XGBClassifier(**full_params)
+            self.model.fit(X_all, y_all, verbose=False)
+            # O calibrador de produção usa as previsões fora da amostra do modelo de avaliação
+            # (calibração + teste); é uma aproximação, já que o modelo refeito viu mais dados.
+            self.calibrator = fit_calibrator(
+                calibration_method,
+                np.concatenate([p_calib, y_proba_raw]),
+                np.concatenate([y_calib.to_numpy(), y_test.to_numpy()]),
+            )
+        else:
+            self.calibrator = eval_calibrator
+        metrics['refit_full'] = bool(refit_full)
+        metrics['n_estimators'] = int(self.model.get_params()['n_estimators'])
+
+        self.training_metrics = metrics
+        return metrics
+
+    def predict_match(self, player1, player2, surface, date=None, tourney_level='UNK', best_of=None,
+                      is_qualifying=0):
         """
-        Faz uma previsão para uma partida específica em uma data específica
+        Faz uma previsão para uma partida específica em uma data específica.
+
+        `tourney_level` usa os códigos do Sackmann (G, M, A, F, D, C). Sem `best_of`, assume
+        5 sets em Grand Slams e 3 nos restantes. A probabilidade é simétrica: média de
+        p(jogador1, jogador2) e 1 − p(jogador2, jogador1), depois calibrada.
         """
-        # Verificar data
+        builder = self.feature_builder
         if date is not None and not isinstance(date, pd.Timestamp):
             try:
                 date = pd.to_datetime(date)
             except Exception as e:
                 print(f"Erro ao converter data: {e}. Usando data mais recente.")
                 date = None
-
         if date is None:
-            date = self.matches['tourney_date'].max()
+            last = builder.last_date or self.last_match_date
+            date = pd.Timestamp(last) + pd.Timedelta(days=1) if last is not None else pd.Timestamp.today().normalize()
 
-        # Verificar jogadores
-        if player1 not in self.player_history or player2 not in self.player_history:
+        if not builder.knows(player1) or not builder.knows(player2):
             print("Um ou ambos os jogadores não foram encontrados nos dados históricos.")
             return None, None, None
 
-        # Obter ELOs
-        player1_elo = self._get_elo_before_match(player1, surface, date)
-        player2_elo = self._get_elo_before_match(player2, surface, date)
+        tourney_level = tourney_level if tourney_level is not None else 'UNK'
+        if best_of is None:
+            best_of = 5 if str(tourney_level).upper() == 'G' else 3
+        context = {'surface': surface, 'tourney_level': tourney_level, 'date': date,
+                   'best_of': best_of, 'is_qualifying': is_qualifying}
+        f12 = builder.features(player1, player2, **context)
+        f21 = builder.features(player2, player1, **context)
 
-        # Obter H2H
-        h2h = self._get_h2h_stats_before_match(player1, player2, date)
-        h2h_display = self._format_h2h(player1, player2, h2h)
-        h2h_total = h2h['w'] + h2h['l']
-        h2h_win_rate = h2h['w'] / h2h_total if h2h_total > 0 else 0.5
-
-        # Stats por superfície
-        player1_stats = self._get_surface_stats_before(player1, surface, date)
-        player2_stats = self._get_surface_stats_before(player2, surface, date)
-        recent_win_diffs = {
-            f'win_last_{window}_diff': self._get_recent_wins(player1, date, window)
-            - self._get_recent_wins(player2, date, window)
-            for window in (3, 5, 10, 25, 50)
-        }
-
-        # Ranking e idade (último valor conhecido antes da data)
-        player1_rank = self._get_player_profile_value_before(player1, 'rank', date, default=None)
-        player2_rank = self._get_player_profile_value_before(player2, 'rank', date, default=None)
-        player1_rank_points = self._get_player_profile_value_before(player1, 'rank_points', date, default=None)
-        player2_rank_points = self._get_player_profile_value_before(player2, 'rank_points', date, default=None)
-        player1_age = self._get_player_profile_value_before(player1, 'age', date, default=None)
-        player2_age = self._get_player_profile_value_before(player2, 'age', date, default=None)
-
-        # Features
-        features = {
-            'elo_diff': player1_elo - player2_elo,
-            'player_elo': player1_elo,
-            'opponent_elo': player2_elo,
-            'player_rank': player1_rank,
-            'opponent_rank': player2_rank,
-            'rank_diff': self._pairwise_diff(player1_rank, player2_rank),
-            'rank_advantage': player2_rank - player1_rank,
-            'player_rank_points': player1_rank_points,
-            'opponent_rank_points': player2_rank_points,
-            'rank_points_diff': self._pairwise_diff(player1_rank_points, player2_rank_points),
-            'rank_points_advantage': player1_rank_points - player2_rank_points,
-            'player_age': player1_age,
-            'opponent_age': player2_age,
-            'age_diff': player1_age - player2_age,
-            'h2h_win_rate': h2h_win_rate,
-            'h2h_diff': 2 * h2h_win_rate - 1,
-            'h2h_matches': h2h_total,
-            'player_surface_win_rate': player1_stats['win_rate'],
-            'player_surface_matches': player1_stats['total_matches'],
-            'opponent_surface_win_rate': player2_stats['win_rate'],
-            'opponent_surface_matches': player2_stats['total_matches'],
-            'surface_win_rate_diff': self._pairwise_diff(
-                player1_stats['win_rate'], player2_stats['win_rate']
-            ),
-            'surface_matches_diff': self._pairwise_diff(
-                player1_stats['total_matches'], player2_stats['total_matches']
-            ),
-            **recent_win_diffs,
-            'surface': surface,
-            'tourney_level': str(tourney_level) if tourney_level is not None else 'UNK'
-        }
-
-        # Criar DataFrame
-        df = pd.DataFrame([features])
-        df = pd.get_dummies(df, columns=['surface'])
-
-        # Garantir todas as colunas usadas no treino
-        df = df.reindex(columns=self.feature_columns, fill_value=0)
-
-        # Prever probabilidade
-        proba = self.model.predict_proba(df)[0]
-        prob_player1 = proba[1]  # classe "1" significa player1 venceu
+        X = self._to_model_matrix(pd.DataFrame([f12, f21]), expected_columns=self.feature_columns)
+        p12, p21 = self.model.predict_proba(X)[:, 1]
+        prob_player1_raw = float((p12 + 1 - p21) / 2)
+        prob_player1 = float(apply_calibration(self.calibrator, [prob_player1_raw])[0])
 
         winner = player1 if prob_player1 >= self.decision_threshold else player2
         confidence = max(prob_player1, 1 - prob_player1)
 
-        # Detalhes
+        h2h = {'w': builder.h2h.get((player1, player2), 0), 'l': builder.h2h.get((player2, player1), 0)}
         details = {
             'date': date,
             'surface': surface,
-            'player1_elo': player1_elo,
-            'player2_elo': player2_elo,
-            'elo_diff': features['elo_diff'],
-            'h2h': h2h_display,
+            'player1_elo': f12['player_elo'],
+            'player2_elo': f12['opponent_elo'],
+            'elo_diff': f12['elo_diff'],
+            'surface_elo_diff': f12['surface_elo_diff'],
+            'h2h': self._format_h2h(player1, player2, h2h),
             'h2h_raw': h2h,
-            'player1_rank': player1_rank,
-            'player2_rank': player2_rank,
-            'rank_advantage': player2_rank - player1_rank,
-            'player1_rank_points': player1_rank_points,
-            'player2_rank_points': player2_rank_points,
-            'rank_points_advantage': player1_rank_points - player2_rank_points,
-            'player1_age': player1_age,
-            'player2_age': player2_age,
-            'age_diff': player1_age - player2_age,
+            'player1_rank': f12['player_rank'],
+            'player2_rank': f12['opponent_rank'],
+            'player1_rank_points': f12['player_rank_points'],
+            'player2_rank_points': f12['opponent_rank_points'],
+            'player1_age': f12['player_age'],
+            'player2_age': f12['opponent_age'],
+            'player1_surface_win_rate': f12['player_surface_win_rate'],
+            'player2_surface_win_rate': f12['opponent_surface_win_rate'],
             'decision_threshold': self.decision_threshold,
-            'player1_surface_win_rate': player1_stats['win_rate'],
-            'player2_surface_win_rate': player2_stats['win_rate'],
+            'tourney_level': f12['tourney_level'],
+            'best_of': f12['best_of'],
+            'probability_raw': max(prob_player1_raw, 1 - prob_player1_raw),
+            'calibration': (self.calibrator or {}).get('method', 'none'),
             'probability': confidence
         }
 
         return winner, confidence, details
 
-    
-    def save_model(self):
-        """Salva o modelo e dados necessários para previsão futura"""
-        print("\nSalvando modelo e dados...")
-        if not os.path.exists(MODEL_PATH):
-            os.makedirs(MODEL_PATH)
-        
-        # Salvar componentes do modelo
-        joblib.dump(self.model, os.path.join(MODEL_PATH, 'tennis_surface_elo_model_xgboost.pkl'))
-        
-        # Salvar dados necessários para previsões
-        joblib.dump({
-            'player_history': self.player_history,
-            'h2h_data': self.h2h_data,
-            'surface_stats': self.surface_stats,
-            'player_profiles': self.player_profiles,
+    def get_state(self):
+        """Estado necessário para previsões (gravado no pkl de dados)."""
+        return {
+            'state_version': STATE_VERSION,
+            'feature_state': self.feature_builder.get_state(),
             'decision_threshold': self.decision_threshold,
             'threshold_profiles': self.threshold_profiles,
-            'feature_columns': self.feature_columns  # Adicionado para garantir consistência
-        }, os.path.join(MODEL_PATH, 'tennis_surface_elo_data_xgboost.pkl'))
-        
-        print(f"Modelo e dados salvos em {MODEL_PATH}")
+            'feature_columns': self.feature_columns,
+            'excluded_features': self.excluded_features,
+            'last_match_date': self.last_match_date,
+            'training_metrics': self.training_metrics,
+            'calibrator': self.calibrator,
+        }
 
-    def load_saved_model(self):
-        """Carrega um modelo treinado anteriormente"""
+    def save_model(self, model_dir: str | None = None):
+        """Salva o modelo e dados necessários para previsão futura (por defeito em MODEL_PATH)."""
+        model_dir = model_dir or MODEL_PATH
+        print("\nSalvando modelo e dados...")
+        os.makedirs(model_dir, exist_ok=True)
+
+        joblib.dump(self.model, os.path.join(model_dir, MODEL_FILENAME))
+        joblib.dump(self.get_state(), os.path.join(model_dir, DATA_FILENAME))
+
+        print(f"Modelo e dados salvos em {model_dir}")
+
+    def load_saved_model(self, model_dir: str | None = None):
+        """Carrega um modelo treinado anteriormente (por defeito de MODEL_PATH)."""
+        model_dir = model_dir or MODEL_PATH
         print("Carregando modelo salvo...")
         try:
-            self.model = joblib.load(os.path.join(MODEL_PATH, 'tennis_surface_elo_model_xgboost.pkl'))
-            
-            data = joblib.load(os.path.join(MODEL_PATH, 'tennis_surface_elo_data_xgboost.pkl'))
-            self.player_history = data.get('player_history', {})
-            self.h2h_data = data.get('h2h_data', {})
-            self.surface_stats = data.get('surface_stats', {})
-            self.player_profiles = data.get('player_profiles', {})
+            data = joblib.load(os.path.join(model_dir, DATA_FILENAME))
+            if 'feature_state' not in data:
+                print("Pkl de dados num formato antigo (sem estado incremental). "
+                      "Treine de novo com: python src/train_model.py")
+                return False
+            self.model = joblib.load(os.path.join(model_dir, MODEL_FILENAME))
+            self.feature_builder = FeatureBuilder(data['feature_state'])
             self.decision_threshold = data.get('decision_threshold', 0.5)
             self.threshold_profiles = data.get('threshold_profiles', {})
             self.feature_columns = data.get('feature_columns')
-            
+            self.excluded_features = data.get('excluded_features', [])
+            self.last_match_date = data.get('last_match_date')
+            self.training_metrics = data.get('training_metrics', {})
+            self.calibrator = data.get('calibrator')
+            self.swap_features = None
+
             print("Modelo e dados carregados com sucesso!")
             return True
         except Exception as e:
             print(f"Erro ao carregar modelo salvo: {str(e)}")
             return False
 
-    def _get_h2h_win_rate(self, player1, player2):
-        """Calcula a taxa de vitória no head-to-head"""
-        stats = self.h2h_data.get(player1, {}).get(player2, {'wins': 0, 'losses': 0})
-        total = stats['wins'] + stats['losses']
-        return stats['wins'] / total if total > 0 else 0.5
-    
-    def _get_h2h_matches(self, player1, player2):
-        """Obtém o número total de partidas head-to-head"""
-        stats = self.h2h_data.get(player1, {}).get(player2, {'wins': 0, 'losses': 0})
-        return stats['wins'] + stats['losses']
-    
-    def _get_surface_win_rate(self, player, surface):
-        """Obtém a taxa de vitória do jogador em uma superfície"""
-        return self.surface_stats.get(player, {}).get(surface, {}).get('win_rate', 0.5)
-    
-    def _get_surface_matches(self, player, surface):
-        """Obtém o número total de partidas do jogador em uma superfície"""
-        return self.surface_stats.get(player, {}).get(surface, {}).get('total_matches', 0)
 
 def main():
+    """Carrega o modelo de produção e mostra um resumo. Para treinar: `python src/train_model.py`."""
     predictor = TennisPredictor()
-    
-    # Verificar se existe modelo treinado
-    if all(os.path.exists(os.path.join(MODEL_PATH, f)) for f in [
-        'tennis_surface_elo_model_xgboost.pkl',
-        'tennis_surface_elo_data_xgboost.pkl'
-    ]):
-        print("Modelo treinado encontrado. Carregando...")
-        if not predictor.load_saved_model():
-            print("Falha ao carregar modelo. Treinando novo modelo...")
-            predictor.load_data()
-            df = predictor.preprocess_data()
-            predictor.train_model(df)
-            predictor.save_model()
-    else:
-        print("Nenhum modelo treinado encontrado. Treinando novo modelo...")
-        predictor.load_data()
-        df = predictor.preprocess_data()
-        predictor.train_model(df)
-        predictor.save_model()
-    
-    #predictor.main_menu()
+    if not predictor.load_saved_model():
+        print(f"Nenhum modelo válido em '{MODEL_PATH}'. Treine com: python src/train_model.py")
+        raise SystemExit(1)
+
+    print(f"Features: {len(predictor.feature_columns or [])} | Jogadores: {len(predictor.feature_builder.players)}")
+    print(f"Último jogo no treino: {predictor.last_match_date or 'desconhecido'}")
+    if predictor.training_metrics:
+        m = predictor.training_metrics
+        print(f"Holdout: logloss={m.get('logloss'):.4f} brier={m.get('brier'):.4f} accuracy={m.get('accuracy'):.3f}")
+
 
 if __name__ == '__main__':
     main()
