@@ -66,7 +66,12 @@ Probabilities are calibrated (Platt or isotonic, chosen on a temporal calibratio
 
 **Evaluation loop**: `compare_predictions_results.py` matches predictions to actual results by normalized player names and writes `previsoes/comparacao_previsoes_YYYY-MM-DD.csv` (`Matched`, `Correct`). `generate_analytics.py` merges it into the cumulative `docs/analytics/*.json`. `analytics_state.json` records which comparisons were already counted, so it doesn't double-count.
 
-**Frontend**: `docs/index.html` is a single static page (Chart.js) that fetches `predicts/*.json`, `analytics/*.json` and `data/*.json` (the last from `src/extract_features_v3.py`, `src/DR_top10.py`). Changing a JSON shape means updating the matching `fetch` consumer in `index.html`.
+**Frontend**: `docs/index.html` is a single static page (Chart.js) that fetches `predicts/*.json`, `analytics/*.json` and `data/*.json` (the last from `src/extract_features_v3.py`, `src/DR_top10.py`). Changing a JSON shape means updating the matching `getJSON(...)` consumer in `index.html`. Shared helpers in the page:
+- `getJSON(url)` checks `response.ok`.
+- `setTabStatus(panelId, 'loading'|'error'|'ok', msg, retry)` drives the per-tab loading/error box.
+- `setupTabList(tabs, onSelect)` implements WAI-ARIA tabs for the nav and surface tabs.
+
+Icons, logo and the Open Graph image live in `docs/img/` (generated from `Volatustennis.png`). Also in `docs/`: `favicon.ico`, `site.webmanifest`, `robots.txt`. Chart.js comes from cdnjs with an SRI hash; changing its version means updating `integrity`.
 
 **Clustering**: `clustering/style_clustering/` is a self-contained package (config → data_loader → feature_engineering → preprocessing → clustering (KMeans/HDBSCAN + stability) → visualization), driven by `main.py`, `streamlit_app.py` and `scripts/export_clustering_json.py`.
 

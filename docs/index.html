@@ -3,8 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="https://migueloliveira6.github.io/VolatusTennis/Volatustennis.png?v=2" type="image/png">
-    <title>VolatusTennis - Previsões</title>
+    <title>VolatusTennis - Previsões de ténis ATP</title>
+    <meta name="description" content="Previsões diárias de jogos de ténis ATP com machine learning: probabilidades calibradas, ELO por superfície, confrontos diretos, valor das odds e histórico de acertos do modelo.">
+    <link rel="canonical" href="https://volatustennis.me/">
+    <meta name="theme-color" content="#0c0b14">
+    <meta name="color-scheme" content="dark">
+
+    <!-- Partilha (Open Graph / Twitter) -->
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="VolatusTennis">
+    <meta property="og:locale" content="pt_PT">
+    <meta property="og:url" content="https://volatustennis.me/">
+    <meta property="og:title" content="VolatusTennis - Previsões de ténis ATP">
+    <meta property="og:description" content="Previsões diárias de ténis ATP com machine learning, ELO por superfície e histórico de acertos.">
+    <meta property="og:image" content="https://volatustennis.me/img/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:image:alt" content="Logótipo VolatusTennis: previsões diárias de ténis ATP com machine learning">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="VolatusTennis - Previsões de ténis ATP">
+    <meta name="twitter:description" content="Previsões diárias de ténis ATP com machine learning, ELO por superfície e histórico de acertos.">
+    <meta name="twitter:image" content="https://volatustennis.me/img/og-image.png">
+
+    <!-- Ícones e PWA -->
+    <link rel="icon" href="favicon.ico" sizes="any">
+    <link rel="icon" href="img/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+    <link rel="manifest" href="site.webmanifest">
+
+    <link rel="preload" href="fonts/Sakana.ttf" as="font" type="font/ttf" crossorigin>
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "VolatusTennis",
+        "url": "https://volatustennis.me/",
+        "description": "Previsões diárias de jogos de ténis ATP com machine learning.",
+        "inLanguage": "pt-PT"
+    }
+    </script>
     <style>
 
         /* ==================== BASE ==================== */
@@ -34,11 +71,12 @@
             src: url('fonts/Sakana.ttf') format('truetype');
             font-weight: normal;
             font-style: normal;
+            font-display: swap;
         }
 
         body {
             font-family: 'Sakana', sans-serif;
-            color: #333;
+            color: var(--text);
             min-height: 100vh;
             padding: 20px;
             background: var(--bg);
@@ -139,12 +177,96 @@
         .flt:focus-visible,
         .nav-tab:focus-visible,
         .surface-tab:focus-visible,
-        .player-search-result:focus-visible {
+        .player-search-result:focus-visible,
+        .tab-content:focus-visible,
+        .tab-status-retry:focus-visible,
+        .clear-player-search:focus-visible {
             outline: 2px solid var(--accent);
             outline-offset: 2px;
         }
 
+        /* ==================== ESTADOS DE CARREGAMENTO / ERRO ==================== */
+        .tab-status {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin: 0 0 24px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            color: var(--muted);
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        .tab-status[hidden] {
+            display: none;
+        }
+
+        .tab-status.is-error {
+            color: #fecaca;
+            border-color: rgba(248, 113, 113, 0.5);
+            background: rgba(248, 113, 113, 0.08);
+        }
+
+        .tab-status-spinner {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            border: 2px solid var(--line);
+            border-top-color: var(--accent);
+            animation: tabStatusSpin 0.8s linear infinite;
+        }
+
+        @keyframes tabStatusSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        .tab-status-retry {
+            min-height: 36px;
+            padding: 0 16px;
+            border-radius: 999px;
+            border: 1px solid var(--accent);
+            background: transparent;
+            color: var(--text);
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .tab-status-retry:hover {
+            background: rgba(167, 139, 250, 0.15);
+        }
+
+        /* Esqueleto dos valores enquanto os dados não chegam */
+        [aria-busy="true"] .stat-value {
+            color: transparent;
+            border-radius: 8px;
+            background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+            background-size: 200% 100%;
+            animation: skeleton 1.2s ease-in-out infinite;
+        }
+
+        @keyframes skeleton {
+            from { background-position: 200% 0; }
+            to { background-position: -200% 0; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .tab-status-spinner,
+            [aria-busy="true"] .stat-value {
+                animation: none;
+            }
+        }
+
         /* ==================== SEPARADORES ==================== */
+        /* evita scroll horizontal momentâneo durante a animação de entrada dos separadores */
+        #conteudo {
+            overflow-x: clip;
+        }
+
         .tab-content {
             display: none;
         }
@@ -216,7 +338,7 @@
 
         .charts-section {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
             gap: 16px;
             margin-bottom: 24px;
         }
@@ -287,7 +409,7 @@
 
         .top10-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr));
             gap: 10px;
             margin-top: 0;
         }
@@ -358,7 +480,7 @@
 
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
@@ -377,7 +499,7 @@
         }
 
         .stat-label {
-            color: #666;
+            color: var(--muted);
             margin-top: 5px;
             margin-bottom: 5px;
         }
@@ -439,7 +561,7 @@
         /* ==================== CLUSTERING ==================== */
         .cluster-meta-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(260px, 100%), 1fr));
             gap: 12px;
             margin-bottom: 20px;
             text-align: left;
@@ -473,7 +595,7 @@
 
         .cluster-card-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(250px, 100%), 1fr));
             gap: 12px;
             margin-top: 0;
         }
@@ -554,7 +676,8 @@
         }
 
         .cluster-toolbar select {
-            min-width: 280px;
+            min-width: 0;
+            width: 100%;
             padding: 12px 14px;
             border-radius: 12px;
             border: 1px solid rgba(118, 75, 162, 0.35);
@@ -565,13 +688,13 @@
 
         .player-search-wrapper {
             position: relative;
-            min-width: 320px;
+            min-width: 0;
             width: min(450px, 100%);
         }
 
         #playerSearch {
             width: 100%;
-            min-width: 280px;
+            min-width: 0;
             outline: none;
             transition: all 0.25s ease;
             min-height: 44px;
@@ -638,8 +761,14 @@
             font-family: 'Sakana', sans-serif;
         }
 
-        .player-search-result:hover {
+        .player-search-result:hover,
+        .player-search-result.is-active {
             background: #26213a;
+        }
+
+        .player-search-result.is-active {
+            outline: 2px solid var(--accent);
+            outline-offset: -2px;
         }
 
         .player-search-result.all-players {
@@ -655,7 +784,7 @@
 
         .cluster-chart-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
             margin-bottom: 25px;
             gap: 16px;
         }
@@ -1314,7 +1443,7 @@
     <div class="loading-screen" id="loadingScreen" role="status" aria-live="polite">
         <div class="loading-content">
             <div class="loading-brand">
-                <img class="loading-logo" src="https://migueloliveira6.github.io/VolatusTennis/Volatustennis.png?v=2" alt="" aria-hidden="true">
+                <img class="loading-logo" src="img/logo-192.webp" width="64" height="64" alt="" aria-hidden="true">
                 <h1>VOLATUS<span>TENNIS</span></h1>
             </div>
             <div class="loading-court" aria-hidden="true">
@@ -1329,21 +1458,25 @@
         <!-- NAVBAR -->
         <nav class="navbar">
             <span class="nav-logo">VOLATUS<span>TENNIS</span></span>
-            <div class="nav-tabs">
-                <button class="nav-tab active" data-tab="previsoes">
+            <div class="nav-tabs" role="tablist" aria-label="Secções do site">
+                <button class="nav-tab active" data-tab="previsoes" role="tab" id="tabbtn-previsoes"
+                        aria-selected="true" aria-controls="tab-previsoes">
                     Previsões
                 </button>
-                <button class="nav-tab" data-tab="estatisticas">
+                <button class="nav-tab" data-tab="estatisticas" role="tab" id="tabbtn-estatisticas"
+                        aria-selected="false" aria-controls="tab-estatisticas" tabindex="-1">
                     Estatísticas
                 </button>
-                <button class="nav-tab" data-tab="clustering">
+                <button class="nav-tab" data-tab="clustering" role="tab" id="tabbtn-clustering"
+                        aria-selected="false" aria-controls="tab-clustering" tabindex="-1">
                     Clustering
                 </button>
                 <!-- Futuro: ELO & Rankings -->
                 <!-- <button class="nav-tab" data-tab="elo">ELO & Rankings</button> -->
             </div>
         </nav>
-        <div id="tab-previsoes" class="tab-content active">
+        <main id="conteudo">
+        <div id="tab-previsoes" class="tab-content active" role="tabpanel" aria-labelledby="tabbtn-previsoes" tabindex="0">
             <header>
                 <h1>Previsões de hoje</h1>
                 <p class="subtitle">Um modelo criado para previsões de Ténis com Machine Learning</p>
@@ -1370,14 +1503,14 @@
 
             <div class="predictions-container">
                 <div class="chip-row" id="tournamentChips" role="group" aria-label="Filtrar jogos"></div>
-                <div id="predictions" class="loading">
-                    Carregando previsões...
+                <div id="predictions" class="loading" aria-live="polite" aria-busy="true">
+                    A carregar previsões...
                 </div>
             </div>
             <p class="mx-foot">Informação estatística, não é aconselhamento de apostas.</p>
         </div>
          <!-- TAB: ESTATÍSTICAS (nova) -->
-        <div id="tab-estatisticas" class="tab-content">
+        <div id="tab-estatisticas" class="tab-content" role="tabpanel" aria-labelledby="tabbtn-estatisticas" tabindex="0" hidden>
             <header class="stats-header">
                 <h2>Estatísticas de Acertos</h2>
                 <p class="subtitle">Performance das previsões ao longo do tempo</p>
@@ -1418,12 +1551,12 @@
             <div class="charts-section">
                 <div class="chart-card">
                     <h3>Evolução da taxa de acerto</h3>
-                    <canvas id="accuracyTrendChart" height="80"></canvas>
+                    <canvas role="img" aria-label="Gráfico de linha: taxa de acerto do modelo por mês" id="accuracyTrendChart" height="80"></canvas>
                 </div>
                 
                 <div class="chart-card">
                     <h3>Acerto por faixa de confiança</h3>
-                    <canvas id="confidenceChart" height="80"></canvas>
+                    <canvas role="img" aria-label="Gráfico de barras: taxa de acerto por faixa de confiança da previsão" id="confidenceChart" height="80"></canvas>
                 </div>
             </div>
 
@@ -1431,25 +1564,25 @@
             <div class="section">
                 <h2>Top 10 jogadores por superfície</h2>
                 
-                <div class="surface-tabs">
-                    <button class="surface-tab active" data-surface="hard">Hard</button>
-                    <button class="surface-tab" data-surface="clay">Clay</button>
-                    <button class="surface-tab" data-surface="grass">Grass</button>
+                <div class="surface-tabs" role="tablist" aria-label="Superfície">
+                    <button class="surface-tab active" data-surface="hard" role="tab" aria-selected="true" aria-controls="top10-container">Hard</button>
+                    <button class="surface-tab" data-surface="clay" role="tab" aria-selected="false" aria-controls="top10-container" tabindex="-1">Clay</button>
+                    <button class="surface-tab" data-surface="grass" role="tab" aria-selected="false" aria-controls="top10-container" tabindex="-1">Grass</button>
                 </div>
-                
-                <div id="top10-container" class="top10-grid"></div>
+
+                <div id="top10-container" class="top10-grid" role="tabpanel" aria-live="polite"></div>
             </div>
 
             <!-- Tendências de ELO -->
             <div class="section">
                 <h2>Evolução do ELO dos 5 melhores jogadores</h2>
                 <div class="chart-card">
-                    <canvas id="eloTrendsChart" height="150"></canvas>
+                    <canvas role="img" aria-label="Gráfico de linha: evolução do ELO dos 5 melhores jogadores" id="eloTrendsChart" height="150"></canvas>
                 </div>
             </div>
         </div>
 
-        <div id="tab-clustering" class="tab-content">
+        <div id="tab-clustering" class="tab-content" role="tabpanel" aria-labelledby="tabbtn-clustering" tabindex="0" hidden>
             <header class="stats-header">
                 <h2>Clustering de Jogadores</h2>
                 <p class="subtitle">Perfis de estilo, distribuição dos clusters e resumo do modelo</p>
@@ -1501,6 +1634,10 @@
                         id="playerSearch"
                         placeholder="Pesquisar jogador..."
                         autocomplete="off"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-expanded="false"
+                        aria-controls="playerSearchResults"
                     >
 
                     <button
@@ -1508,11 +1645,12 @@
                         id="clearPlayerSearch"
                         class="clear-player-search"
                         title="Mostrar todos os jogadores"
+                        aria-label="Limpar pesquisa e mostrar todos os jogadores"
                     >
-                        ×
+                        <span aria-hidden="true">×</span>
                     </button>
 
-                    <div id="playerSearchResults" class="player-search-results"></div>
+                    <div id="playerSearchResults" class="player-search-results" role="listbox" aria-label="Jogadores"></div>
                 </div>
             </div>
 
@@ -1521,19 +1659,19 @@
             <div class="cluster-chart-grid">
                 <div class="chart-card">
                     <h3>Espaço 2D dos Jogadores</h3>
-                    <canvas id="clusterScatterChart"></canvas>
+                    <canvas role="img" aria-label="Gráfico de dispersão: jogadores no espaço 2D dos estilos de jogo, coloridos por cluster" id="clusterScatterChart"></canvas>
                 </div>
                 <div class="chart-card">
                     <h3>Distribuição por Cluster</h3>
-                    <canvas id="clusterDistributionChart"></canvas>
+                    <canvas role="img" aria-label="Gráfico: número de jogadores em cada cluster" id="clusterDistributionChart"></canvas>
                 </div>
                 <div class="chart-card">
                     <h3>Evolução por Temporada</h3>
-                    <canvas id="clusterTrendChart"></canvas>
+                    <canvas role="img" aria-label="Gráfico: evolução dos clusters por temporada" id="clusterTrendChart"></canvas>
                 </div>
                 <div class="chart-card radar-card">
                     <h3>Radar do Perfil</h3>
-                    <canvas id="clusterRadarChart"></canvas>
+                    <canvas role="img" aria-label="Gráfico radar: perfil de estilo do jogador ou cluster selecionado" id="clusterRadarChart"></canvas>
                 </div>
             </div>
 
@@ -1547,9 +1685,12 @@
                 <div id="style-breakdown" class="cluster-card-grid"></div>
             </div>
         </div>
+        </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"
+            integrity="sha512-SIMGYRUjwY8+gKg7nn9EItdD8LCADSDfJNutF9TPrvEo86sQmFMh6MyralfIyhADlajSxqc7G0gs7+MwWF/ogQ=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <script>
         let allMatches = []; // Armazena todos os jogos
         let currentFilter = 'all'; // Filtro atual
@@ -1559,10 +1700,54 @@
         let resolvePredictionsReady;
         window.predictionsReady = new Promise(resolve => { resolvePredictionsReady = resolve; });
 
+        // ==================== CARREGAMENTO DE DADOS ====================
+        // fetch com verificação do HTTP status (um 404 do GitHub Pages devolve HTML, não JSON)
+        async function getJSON(url) {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
+            return response.json();
+        }
+
+        // Caixa de estado por separador: loading, erro (com "Tentar de novo") ou vazio
+        function setTabStatus(panelId, state, message = '', retry = null) {
+            const panel = document.getElementById(panelId);
+            if (!panel) return;
+            let box = panel.querySelector(':scope > .tab-status');
+            if (!box) {
+                box = document.createElement('div');
+                box.className = 'tab-status';
+                box.setAttribute('role', 'status');
+                box.setAttribute('aria-live', 'polite');
+                (panel.querySelector('.stats-header') || panel.firstElementChild).insertAdjacentElement('afterend', box);
+            }
+            panel.setAttribute('aria-busy', state === 'loading' ? 'true' : 'false');
+            box.className = `tab-status is-${state}`;
+            box.hidden = state === 'ok';
+            box.textContent = '';
+            if (state === 'ok') return;
+            if (state === 'loading') {
+                const spinner = document.createElement('span');
+                spinner.className = 'tab-status-spinner';
+                spinner.setAttribute('aria-hidden', 'true');
+                box.appendChild(spinner);
+            }
+            const text = document.createElement('span');
+            text.textContent = message;
+            box.appendChild(text);
+            if (retry) {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'tab-status-retry';
+                button.textContent = 'Tentar de novo';
+                button.addEventListener('click', retry);
+                box.appendChild(button);
+            }
+        }
+
         // Carregar dados
         Promise.all([
-            fetch('predicts/predictions.json').then(r => r.json()),
-            fetch('predicts/status.json').then(r => r.json()).catch(() => ({ status: 'ready' }))
+            getJSON('predicts/predictions.json'),
+            getJSON('predicts/status.json').catch(() => ({ status: 'ready' }))
         ])
             .then(([data, status]) => {
                 allMatches = data;
@@ -1570,11 +1755,26 @@
                 renderStats(data);
                 renderPredictions(data, status);
             })
-            .catch(() => {
-                document.getElementById('predictions').innerHTML =
-                '<p style="color: #ef4444;">Erro ao carregar previsões</p>';
+            .catch(error => {
+                console.error('Erro ao carregar previsões:', error);
+                const container = document.getElementById('predictions');
+                container.textContent = '';
+                const box = document.createElement('div');
+                box.className = 'tab-status is-error';
+                box.setAttribute('role', 'alert');
+                box.textContent = 'Não foi possível carregar as previsões. ';
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = 'tab-status-retry';
+                button.textContent = 'Tentar de novo';
+                button.addEventListener('click', () => location.reload());
+                box.appendChild(button);
+                container.appendChild(box);
             })
-            .finally(() => resolvePredictionsReady());
+            .finally(() => {
+                document.getElementById('predictions')?.setAttribute('aria-busy', 'false');
+                resolvePredictionsReady();
+            });
 
         let onlyValue = false; // chip "Só com valor"
 
@@ -1713,27 +1913,43 @@
         }
 
         // ==================== SISTEMA DE TABS ====================
-        document.querySelectorAll('.nav-tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                const targetTab = tab.getAttribute('data-tab');
-                
-                // Remove active de todos
-                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                
-                // Ativa o selecionado
-                tab.classList.add('active');
-                document.getElementById(`tab-${targetTab}`).classList.add('active');
-                
-                // Se for tab de estatísticas, carrega os dados
-                if (targetTab === 'estatisticas' && !window.statsLoaded) {
-                    loadStatistics();
-                }
-
-                if (targetTab === 'clustering' && !window.clusteringLoaded) {
-                    loadClustering();
-                }
+        // Padrão WAI-ARIA Tabs: só o separador ativo está na ordem do Tab; setas/Home/End mudam de separador.
+        function setupTabList(tabs, onSelect) {
+            function select(tab, focus = false) {
+                tabs.forEach(t => {
+                    const active = t === tab;
+                    t.classList.toggle('active', active);
+                    t.setAttribute('aria-selected', active ? 'true' : 'false');
+                    t.tabIndex = active ? 0 : -1;
+                });
+                if (focus) tab.focus();
+                onSelect(tab);
+            }
+            tabs.forEach((tab, index) => {
+                tab.addEventListener('click', () => select(tab));
+                tab.addEventListener('keydown', event => {
+                    const keys = { ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: tabs.length - 1 };
+                    if (!(event.key in keys)) return;
+                    event.preventDefault();
+                    select(tabs[(keys[event.key] + tabs.length) % tabs.length], true);
+                });
             });
+        }
+
+        setupTabList(Array.from(document.querySelectorAll('.nav-tab')), tab => {
+            const targetTab = tab.getAttribute('data-tab');
+            document.querySelectorAll('.tab-content').forEach(panel => {
+                const active = panel.id === `tab-${targetTab}`;
+                panel.classList.toggle('active', active);
+                panel.hidden = !active;
+            });
+
+            if (targetTab === 'estatisticas' && !window.statsLoaded) {
+                loadStatistics();
+            }
+            if (targetTab === 'clustering' && !window.clusteringLoaded) {
+                loadClustering();
+            }
         });
 
         // ==================== CARREGAR ESTATÍSTICAS ====================
@@ -1777,13 +1993,15 @@
         }
 
         async function loadStatistics() {
-            console.debug('loadStatistics: starting');
+            if (window.statsLoading) return;
+            window.statsLoading = true;
+            setTabStatus('tab-estatisticas', 'loading', 'A carregar estatísticas…');
             try {
                 // Carregar dados
                 const [globalStats, byDate, byConfidence] = await Promise.all([
-                    fetch('analytics/global_stats.json').then(r => r.json()),
-                    fetch('analytics/accuracy_by_date.json').then(r => r.json()),
-                    fetch('analytics/accuracy_by_confidence.json').then(r => r.json())
+                    getJSON('analytics/global_stats.json'),
+                    getJSON('analytics/accuracy_by_date.json'),
+                    getJSON('analytics/accuracy_by_confidence.json')
                 ]);
 
                 console.debug('loadStatistics: fetched data', { globalStats, byDateLength: byDate.length, byConfidenceLength: byConfidence.length });
@@ -1927,18 +2145,18 @@
 
                 // Marcar como carregado com sucesso
                 window.statsLoaded = true;
-                
+                setTabStatus('tab-estatisticas', 'ok');
+
                 // Carregar Top 10 e Tendências de ELO
                 await loadTop10AndTrends();
 
             } catch (error) {
                 console.error('Erro ao carregar estatísticas:', error);
-                document.querySelector('#tab-estatisticas .stats-header').insertAdjacentHTML('afterend', 
-                    `<div style="color: #ff5252; text-align: center; padding: 20px;">⚠️ Erro ao carregar estatísticas: ${error.message || error}. Verifique se os arquivos JSON existem.</div>`
-                );
-                // Permitir re-tentar no próximo clique
+                setTabStatus('tab-estatisticas', 'error',
+                    'Não foi possível carregar as estatísticas. Verifique a ligação e tente de novo.', loadStatistics);
                 window.statsLoaded = false;
-                return;
+            } finally {
+                window.statsLoading = false;
             }
         }
 
@@ -1957,8 +2175,8 @@
             try {
                 // Carregar dados
                 const [top10Data, eloTrendsData] = await Promise.all([
-                    fetch('data/top10_by_surface.json').then(r => r.json()),
-                    fetch('data/elo_trends.json').then(r => r.json())
+                    getJSON('data/top10_by_surface.json'),
+                    getJSON('data/elo_trends.json')
                 ]);
 
                 // Renderizar Top 10
@@ -1967,20 +2185,30 @@
                 // Renderizar Tendências de ELO
                 renderEloTrends(eloTrendsData);
                 
-                // Event listeners para abas de superfície
-                document.querySelectorAll('.surface-tab').forEach(tab => {
-                    tab.addEventListener('click', () => {
-                        document.querySelectorAll('.surface-tab').forEach(t => t.classList.remove('active'));
-                        tab.classList.add('active');
+                // Abas de superfície (só se ligam uma vez, mesmo que se tente carregar de novo)
+                const surfaceTabs = Array.from(document.querySelectorAll('.surface-tab'));
+                if (!surfaceTabs[0]?.dataset.bound) {
+                    surfaceTabs.forEach(tab => { tab.dataset.bound = '1'; });
+                    setupTabList(surfaceTabs, tab => {
                         currentSurface = tab.getAttribute('data-surface');
                         renderTop10(top10Data, currentSurface);
                     });
-                });
+                }
             } catch (error) {
                 console.error('Erro ao carregar top 10 e tendências:', error);
                 const container = document.getElementById('top10-container');
                 if (container) {
-                    container.innerHTML = `<p style="color: #ff5252; text-align: center;">⚠️ Erro ao carregar dados: ${error.message}</p>`;
+                    container.textContent = '';
+                    const box = document.createElement('div');
+                    box.className = 'tab-status is-error';
+                    box.textContent = 'Não foi possível carregar o Top 10 e a evolução do ELO. ';
+                    const button = document.createElement('button');
+                    button.type = 'button';
+                    button.className = 'tab-status-retry';
+                    button.textContent = 'Tentar de novo';
+                    button.addEventListener('click', loadTop10AndTrends);
+                    box.appendChild(button);
+                    container.appendChild(box);
                 }
             }
         }
@@ -2019,7 +2247,7 @@
 
             // Preparar dados para o gráfico
             const datasets = [];
-            const colors = ['#667eea', '#764ba2', '#a466ea', '#ff6b9d', '#feca57'];
+            const colors = ['#667eea', '#c084fc', '#a466ea', '#ff6b9d', '#feca57'];
             let allDates = new Set();
 
             // Recolher todas as datas
@@ -2097,7 +2325,7 @@
                             backgroundColor: 'rgba(0, 0, 0, 0.8)',
                             titleColor: '#ffffff',
                             bodyColor: '#ffffff',
-                            borderColor: '#764ba2',
+                            borderColor: '#c084fc',
                             borderWidth: 1
                         }
                     }
@@ -2106,8 +2334,11 @@
         }
 
         async function loadClustering() {
+            if (window.clusteringLoading) return;
+            window.clusteringLoading = true;
+            setTabStatus('tab-clustering', 'loading', 'A carregar os dados de clustering (cerca de 6 MB, pode demorar uns segundos)…');
             try {
-                const summary = await fetch('analytics/clustering_dashboard.json').then(r => r.json());
+                const summary = await getJSON('analytics/clustering_dashboard.json');
                 clusteringDashboard = summary;
 
                 populatePlayerFilter(summary.players || []);
@@ -2169,16 +2400,14 @@
                 refreshClusteringCharts();
 
                 window.clusteringLoaded = true;
+                setTabStatus('tab-clustering', 'ok');
             } catch (error) {
                 console.error('Erro ao carregar clustering:', error);
-                const container = document.getElementById('tab-clustering');
-                const fallback = document.createElement('div');
-                fallback.style.color = '#ff5252';
-                fallback.style.textAlign = 'center';
-                fallback.style.padding = '20px';
-                fallback.textContent = `⚠️ Erro ao carregar clustering: ${error.message || error}. Verifique o arquivo analytics/clustering_summary.json.`;
-                container.querySelector('.stats-header')?.insertAdjacentElement('afterend', fallback);
+                setTabStatus('tab-clustering', 'error',
+                    'Não foi possível carregar os dados de clustering. Verifique a ligação e tente de novo.', loadClustering);
                 window.clusteringLoaded = false;
+            } finally {
+                window.clusteringLoading = false;
             }
         }
 
@@ -2207,40 +2436,83 @@
                     : clusterPlayerNames;
 
                 results.innerHTML = '';
+                activeOptionIndex = -1;
+                input.removeAttribute('aria-activedescendant');
 
-                // "Todos os jogadores"
-                const allOption = document.createElement('div');
-                allOption.className = 'player-search-result all-players';
-                allOption.textContent = '👥 Todos os jogadores';
+                function addOption(label, value, extraClass = '') {
+                    const option = document.createElement('div');
+                    option.className = `player-search-result ${extraClass}`.trim();
+                    option.id = `player-option-${results.children.length}`;
+                    option.setAttribute('role', 'option');
+                    option.setAttribute('aria-selected', 'false');
+                    option.dataset.value = value;
+                    option.textContent = label;
+                    // mousedown em vez de click: escolhe antes de o input perder o foco
+                    option.addEventListener('mousedown', event => {
+                        event.preventDefault();
+                        selectClusterPlayer(value);
+                    });
+                    results.appendChild(option);
+                }
 
-                allOption.addEventListener('click', () => {
-                    selectClusterPlayer('all');
-                });
-
-                results.appendChild(allOption);
+                addOption('👥 Todos os jogadores', 'all', 'all-players');
 
                 if (filteredPlayers.length === 0) {
                     const noResults = document.createElement('div');
                     noResults.className = 'player-search-no-results';
+                    noResults.setAttribute('role', 'status');
                     noResults.textContent = 'Nenhum jogador encontrado.';
                     results.appendChild(noResults);
                 } else {
                     // Limitar resultados para não criar uma lista gigante
-                    filteredPlayers.slice(0, 50).forEach(name => {
-                        const option = document.createElement('div');
-                        option.className = 'player-search-result';
-                        option.textContent = name;
-
-                        option.addEventListener('click', () => {
-                            selectClusterPlayer(name);
-                        });
-
-                        results.appendChild(option);
-                    });
+                    filteredPlayers.slice(0, 50).forEach(name => addOption(name, name));
                 }
 
                 results.classList.add('active');
+                input.setAttribute('aria-expanded', 'true');
             }
+
+            let activeOptionIndex = -1;
+
+            function closeResults() {
+                results.classList.remove('active');
+                input.setAttribute('aria-expanded', 'false');
+                input.removeAttribute('aria-activedescendant');
+                activeOptionIndex = -1;
+            }
+
+            function moveActiveOption(step) {
+                const options = Array.from(results.querySelectorAll('[role="option"]'));
+                if (!options.length) return;
+                activeOptionIndex = (activeOptionIndex + step + options.length) % options.length;
+                options.forEach((option, i) => {
+                    const active = i === activeOptionIndex;
+                    option.classList.toggle('is-active', active);
+                    option.setAttribute('aria-selected', active ? 'true' : 'false');
+                });
+                const activeOption = options[activeOptionIndex];
+                input.setAttribute('aria-activedescendant', activeOption.id);
+                activeOption.scrollIntoView({ block: 'nearest' });
+            }
+
+            input.addEventListener('keydown', event => {
+                const isOpen = results.classList.contains('active');
+                if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+                    event.preventDefault();
+                    if (!isOpen) renderSearchResults(input.value);
+                    moveActiveOption(event.key === 'ArrowDown' ? 1 : -1);
+                } else if (event.key === 'Enter' && isOpen) {
+                    const options = results.querySelectorAll('[role="option"]');
+                    const target = options[activeOptionIndex] || (input.value.trim() ? options[1] : null);
+                    if (target) {
+                        event.preventDefault();
+                        selectClusterPlayer(target.dataset.value);
+                    }
+                } else if (event.key === 'Escape' && isOpen) {
+                    event.preventDefault();
+                    closeResults();
+                }
+            });
 
             function selectClusterPlayer(playerName) {
                 selectedClusterPlayer = playerName;
@@ -2253,7 +2525,7 @@
                     clearButton.style.display = 'block';
                 }
 
-                results.classList.remove('active');
+                closeResults();
 
                 refreshClusteringCharts();
             }
@@ -2276,7 +2548,7 @@
 
             document.addEventListener('click', event => {
                 if (!event.target.closest('.player-search-wrapper')) {
-                    results.classList.remove('active');
+                    closeResults();
                 }
             });
         }
@@ -2409,7 +2681,7 @@
                     datasets: [{
                         label: 'Jogadores',
                         data: clusters.map(item => item.size),
-                        backgroundColor: ['#667eea', '#764ba2', '#a466ea', '#ffb86b', '#00c853'],
+                        backgroundColor: ['#667eea', '#c084fc', '#a466ea', '#ffb86b', '#00c853'],
                         borderRadius: 10
                     }]
                 },
