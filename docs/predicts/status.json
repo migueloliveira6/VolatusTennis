@@ -1,5 +1,4 @@
 {
-  "status": "no_matches",
-  "message": "Não há jogos de ténis disponíveis para hoje.",
-  "date": "2026-09-14"
+  "status": "ready",
+  "message": "Previsões disponíveis."
 }

@@ -1,9 +1,5 @@
-https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-0407/Rotterdam
-https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-0424/Dallas
-https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-0506/Buenos-Aires
-https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-0375/Montpellier
-https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-580/Australian-Open
-https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-8998/Adelaide
-https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-0301/Auckland
-https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-0336/Hong-Kong
-https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-0339/Brisbane
+https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-9410/Almaty
+https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-7485/Brussels
+https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-0496/Lyon
+https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-0337/Vienna
+https://www.tennisabstract.com/cgi-bin/tourney.cgi?t=2026-0328/Basel

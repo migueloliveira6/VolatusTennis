@@ -74,6 +74,25 @@ def test_update_inserts_same_week_and_backfilled_tournaments_but_not_duplicates(
     assert update_db(str(db), str(csv))['new'] == 0
 
 
+def test_scraped_csv_with_repeated_match_num_inserts_every_match(tmp_path):
+    """No CSV raspado o match_num é sempre 1 dentro do torneio: não pode ser usado como chave."""
+    db, csv = tmp_path / 'db.sqlite', tmp_path / 'new.csv'
+    _make_db(db)
+    common = {'tourney_id': '2026-9410/Almaty', 'match_num': 1, 'tourney_date': 20261019, 'tourney_name': 'Almaty'}
+    _write_csv(csv, [
+        {**common, 'round': 'F', 'winner_name': 'Medvedev', 'loser_name': 'Basilashvili'},
+        {**common, 'round': 'SF', 'winner_name': 'Medvedev', 'loser_name': 'Bublik'},
+        {**common, 'round': 'SF', 'winner_name': 'Basilashvili', 'loser_name': 'Tsitsipas'},
+        {**common, 'round': 'QF', 'winner_name': 'Medvedev', 'loser_name': 'Atmane'},
+    ])
+
+    assert update_db(str(db), str(csv))['new'] == 4
+    conn = sqlite3.connect(db)
+    rounds = [r for (r,) in conn.execute("SELECT round FROM matches WHERE tourney_id = '2026-9410/Almaty' ORDER BY match_id")]
+    assert rounds == ['QF', 'SF', 'SF', 'F']  # inseridos pela ordem das rondas
+    assert update_db(str(db), str(csv))['new'] == 0
+
+
 def test_train_model_excludes_fatigue_and_momentum_by_default():
     assert build_parser().parse_args([]).exclude_groups == list(DEFAULT_EXCLUDED_GROUPS)
     assert build_parser().parse_args(['--exclude-groups']).exclude_groups == []

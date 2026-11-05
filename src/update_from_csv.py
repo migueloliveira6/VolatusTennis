@@ -8,9 +8,10 @@ CSV esperado (ex.: dataset_2026_normalizado_v4.csv), colunas Sackmann:
     winner_name,loser_name,score,DRW,best_of,round,minutes,w_ace,w_df,w_svpt,...,
     winner_rank,loser_rank,tournament_type
 
-- Só insere jogos que ainda não existem (mesmo tourney_id + match_num, ou mesma data +
-  vencedor + perdedor + ronda), em vez de filtrar pela última data da BD: assim não se
-  perdem torneios da mesma semana nem torneios publicados mais tarde.
+- Só insere jogos que ainda não existem (mesmo vencedor + perdedor + ronda no mesmo torneio ou
+  na mesma data), em vez de filtrar pela última data da BD: assim não se perdem torneios da
+  mesma semana nem torneios publicados mais tarde. O match_num não é usado (vem sempre 1 no
+  CSV raspado).
 - ELO com K dinâmico e a política de jogos especiais (iguais ao recompute_elo.py).
 
 Usage:
@@ -30,8 +31,8 @@ from elo_calculator import INITIAL_ELO, level_k_multiplier, update_elo_dynamic
 from match_policy import classify_result, elo_k_multiplier, is_training_target, sort_matches
 from recompute_elo import LEVEL_FIXES, TOURNAMENT_TYPE_FIXES
 
-DB_PATH = os.getenv('DB_PATH', os.path.join(os.path.dirname(__file__), '..', 'datasets', 'tennis_data_2026.db'))
-CSV_PATH = os.getenv('CSV_PATH', os.path.join(os.path.dirname(__file__), '..', 'datasets', 'dataset_2026_normalizado_v4.csv'))
+DB_PATH = os.getenv('DB_PATH', os.path.join(os.path.dirname(__file__), '..', 'datasets', 'tennis_data_2026_v3.db'))
+CSV_PATH = os.getenv('CSV_PATH', os.path.join(os.path.dirname(__file__), '..', 'datasets', 'dataset_2026_normalizado_v5.csv'))
 
 # Colunas copiadas do CSV tal como vêm (se existirem no CSV e na tabela)
 CSV_COLUMNS = [
@@ -57,14 +58,6 @@ def _clean(value):
     return value.item() if hasattr(value, 'item') else value
 
 
-def _norm_match_num(value):
-    value = _clean(value)
-    try:
-        return int(float(value)) if value is not None else None
-    except (TypeError, ValueError):
-        return None
-
-
 def parse_dates(series: pd.Series) -> pd.Series:
     """Aceita YYYYMMDD (Sackmann) ou YYYY-MM-DD."""
     text = series.astype(str).str.strip()
@@ -73,28 +66,37 @@ def parse_dates(series: pd.Series) -> pd.Series:
 
 
 def load_existing_keys(conn):
-    """Chaves dos jogos já na BD: (tourney_id, match_num) e (data, vencedor, perdedor, ronda)."""
-    by_id, by_players = set(), set()
-    for tid, num, date, winner, loser, rnd in conn.execute(
-        'SELECT tourney_id, match_num, tourney_date, winner_name, loser_name, round FROM matches'
+    """Chaves dos jogos já na BD: (torneio, ronda, vencedor, perdedor) e (data, ronda, vencedor, perdedor).
+
+    O match_num não entra na chave: no CSV raspado vem sempre 1 dentro de cada torneio.
+    """
+    by_tourney, by_date = set(), set()
+    for tid, date, winner, loser, rnd in conn.execute(
+        'SELECT tourney_id, tourney_date, winner_name, loser_name, round FROM matches'
     ):
-        if tid is not None and num is not None:
-            by_id.add((str(tid), _norm_match_num(num)))
-        by_players.add((str(date)[:10], winner, loser, rnd))
-    return by_id, by_players
+        if tid is not None:
+            by_tourney.add((str(tid), rnd, winner, loser))
+        by_date.add((str(date)[:10], rnd, winner, loser))
+    return by_tourney, by_date
 
 
-def select_new_matches(df: pd.DataFrame, by_id: set, by_players: set) -> pd.DataFrame:
-    """Filtra os jogos do CSV que ainda não estão na BD (também remove duplicados dentro do CSV)."""
-    keep, seen_id, seen_players = [], set(by_id), set(by_players)
+def select_new_matches(df: pd.DataFrame, by_tourney: set, by_date: set) -> pd.DataFrame:
+    """Filtra os jogos do CSV que ainda não estão na BD (também remove duplicados dentro do CSV).
+
+    Um jogo é duplicado se já existir o mesmo vencedor/perdedor na mesma ronda do mesmo torneio
+    (tourney_id) ou na mesma data de torneio.
+    """
+    keep, seen_tourney, seen_date = [], set(by_tourney), set(by_date)
     for row in df.itertuples(index=False):
-        id_key = (str(row.tourney_id), _norm_match_num(row.match_num)) if _clean(row.tourney_id) is not None else None
-        players_key = (row.tourney_date.strftime('%Y-%m-%d'), row.winner_name, row.loser_name, _clean(getattr(row, 'round', None)))
-        duplicate = (id_key is not None and id_key[1] is not None and id_key in seen_id) or players_key in seen_players
+        rnd = _clean(getattr(row, 'round', None))
+        tid = _clean(row.tourney_id)
+        tourney_key = (str(tid), rnd, row.winner_name, row.loser_name) if tid is not None else None
+        date_key = (row.tourney_date.strftime('%Y-%m-%d'), rnd, row.winner_name, row.loser_name)
+        duplicate = (tourney_key is not None and tourney_key in seen_tourney) or date_key in seen_date
         keep.append(not duplicate)
-        if id_key is not None and id_key[1] is not None:
-            seen_id.add(id_key)
-        seen_players.add(players_key)
+        if tourney_key is not None:
+            seen_tourney.add(tourney_key)
+        seen_date.add(date_key)
     return df[keep]
 
 
@@ -133,8 +135,8 @@ def update_db(db_path: str, csv_path: str, dry_run: bool = False) -> dict:
             df[column] = None
     print(f"📄 CSV: {csv_path} ({len(df)} jogos) | 📁 BD: {db_path} (último jogo: {last_date.date() if pd.notna(last_date) else '—'})")
 
-    by_id, by_players = load_existing_keys(conn)
-    df_new = sort_matches(select_new_matches(df, by_id, by_players))
+    by_tourney, by_date = load_existing_keys(conn)
+    df_new = sort_matches(select_new_matches(df, by_tourney, by_date))
     summary = {'csv_rows': len(df), 'new': len(df_new), 'already_in_db': len(df) - len(df_new)}
     if df_new.empty:
         print('⚠️ Não há jogos novos para inserir.')

@@ -992,7 +992,7 @@ def main():
     """Função principal do script"""
     try:
         logger.info("=" * 60)
-        logger.info("🎾 NeuroTennis - Sistema de Previsão de Ténis")
+        logger.info("🎾 VolatusTennis - Sistema de Previsão de Ténis")
         logger.info("=" * 60)
         
         # 1. Importar modelo de previsão
