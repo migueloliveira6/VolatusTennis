@@ -3,8 +3,12 @@
 import os
 import json
 import re
+import sys
 import pandas as pd
 from datetime import datetime
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from track_record import TRACK_RECORD_FILENAME, build_track_rows, merge_track_record
 
 # === CONFIGURAÇÕES ===
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -313,6 +317,13 @@ for filename, data in output_files.items():
     output_path = os.path.join(DOCS_DATA_DIR, filename)
     save_json_file(output_path, data)
     print(f"   ✓ {filename}")
+
+# Histórico jogo a jogo (idempotente: reprocessar o mesmo dia substitui as linhas desse dia)
+track_record_path = os.path.join(DOCS_DATA_DIR, TRACK_RECORD_FILENAME)
+track_record = merge_track_record(load_json_file(track_record_path, []), build_track_rows(df_matched))
+with open(track_record_path, "w", encoding="utf-8") as f:
+    json.dump(track_record, f, ensure_ascii=False, separators=(",", ":"))
+print(f"   ✓ {TRACK_RECORD_FILENAME} ({len(track_record)} jogos)")
 
 print(f"\n✅ Análise concluída! Arquivos salvos em {DOCS_DATA_DIR}")
 print(f"🔗 Pronto para deploy no GitHub Pages!")

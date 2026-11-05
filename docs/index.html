@@ -185,6 +185,135 @@
             outline-offset: 2px;
         }
 
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* ==================== HISTÓRICO ==================== */
+        .tr-filters {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(170px, 100%), 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .tr-filters label {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .tr-filters select,
+        .tr-filters input[type="search"] {
+            min-height: 40px;
+            padding: 0 12px;
+            border-radius: 10px;
+            border: 1px solid var(--line);
+            background: var(--surface);
+            color: var(--text);
+            font: inherit;
+            font-size: 0.9rem;
+        }
+
+        .tr-filters .tr-check {
+            flex-direction: row;
+            align-items: center;
+            align-self: end;
+            min-height: 40px;
+            color: var(--text);
+        }
+
+        .tr-filters .tr-check input {
+            width: 18px;
+            height: 18px;
+            accent-color: var(--accent);
+        }
+
+        .tr-filters select:focus-visible,
+        .tr-filters input:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .tr-empty {
+            color: var(--muted);
+            padding: 24px 8px;
+            text-align: center;
+        }
+
+        .tr-count {
+            color: var(--muted);
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .tr-table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+        }
+
+        .tr-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+            font-size: 0.88rem;
+            color: var(--text);
+        }
+
+        .tr-table th,
+        .tr-table td {
+            padding: 10px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .tr-table thead th {
+            position: sticky;
+            top: 0;
+            background: var(--surface-2);
+            color: var(--muted);
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .tr-table tbody tr:hover {
+            background: var(--surface);
+        }
+
+        .tr-num,
+        .tr-nowrap {
+            white-space: nowrap;
+        }
+
+        .tr-num {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .tr-table .tr-ok {
+            color: var(--pos);
+        }
+
+        .tr-table .tr-fail {
+            color: var(--neg);
+        }
+
+        .tr-more {
+            display: block;
+            margin: 16px auto 0;
+        }
+
         /* ==================== ESTADOS DE CARREGAMENTO / ERRO ==================== */
         .tab-status {
             display: flex;
@@ -1384,15 +1513,48 @@
 
             .nav-tabs {
                 width: 100%;
-                gap: 0;
+                gap: 6px;
             }
 
             .nav-tab {
                 flex: 1 1 auto;
                 justify-content: center;
                 min-width: 0;
-                padding: 0 6px;
+                padding: 0 10px;
                 font-size: 13px;
+            }
+        }
+
+        /* Telemóvel: 4 separadores numa linha ficam colados → grelha 2×2 com alvos de 44px */
+        @media (max-width: 480px) {
+            .nav-tabs {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+                padding-top: 4px;
+            }
+
+            .nav-tab {
+                min-height: 44px;
+                padding: 0 8px;
+                justify-content: center;
+                border: 1px solid var(--line);
+                border-radius: 10px;
+                background: var(--surface);
+                font-size: 13px;
+                letter-spacing: 0.02em;
+            }
+
+            .nav-tab:hover {
+                border-color: var(--line);
+                border-bottom-color: var(--line);
+                background: var(--surface-2);
+            }
+
+            .nav-tab.active {
+                border-color: var(--accent);
+                border-bottom-color: var(--accent);
+                background: rgba(167, 139, 250, 0.14);
             }
         }
 
@@ -1412,11 +1574,6 @@
         @media (max-width: 380px) {
             .nav-logo {
                 font-size: 20px;
-            }
-
-            .nav-tab {
-                padding: 0 3px;
-                font-size: 12px;
             }
         }
 
@@ -1466,6 +1623,10 @@
                 <button class="nav-tab" data-tab="estatisticas" role="tab" id="tabbtn-estatisticas"
                         aria-selected="false" aria-controls="tab-estatisticas" tabindex="-1">
                     Estatísticas
+                </button>
+                <button class="nav-tab" data-tab="historico" role="tab" id="tabbtn-historico"
+                        aria-selected="false" aria-controls="tab-historico" tabindex="-1">
+                    Histórico
                 </button>
                 <button class="nav-tab" data-tab="clustering" role="tab" id="tabbtn-clustering"
                         aria-selected="false" aria-controls="tab-clustering" tabindex="-1">
@@ -1579,6 +1740,106 @@
                 <div class="chart-card">
                     <canvas role="img" aria-label="Gráfico de linha: evolução do ELO dos 5 melhores jogadores" id="eloTrendsChart" height="150"></canvas>
                 </div>
+            </div>
+        </div>
+
+        <div id="tab-historico" class="tab-content" role="tabpanel" aria-labelledby="tabbtn-historico" tabindex="0" hidden>
+            <header class="stats-header">
+                <h2>Histórico de previsões</h2>
+                <p class="subtitle">Cada previsão comparada com o resultado real e o resultado das apostas sugeridas</p>
+            </header>
+
+            <div class="tr-filters" role="group" aria-label="Filtros do histórico">
+                <label>Período
+                    <select id="tr-period">
+                        <option value="all">Tudo</option>
+                        <option value="30">Últimos 30 dias</option>
+                        <option value="90">Últimos 90 dias</option>
+                    </select>
+                </label>
+                <label>Torneio
+                    <select id="tr-tourney"><option value="all">Todos</option></select>
+                </label>
+                <label>Superfície
+                    <select id="tr-surface"><option value="all">Todas</option></select>
+                </label>
+                <label>Confiança
+                    <select id="tr-conf">
+                        <option value="0">Todas</option>
+                        <option value="60">60% ou mais</option>
+                        <option value="70">70% ou mais</option>
+                        <option value="80">80% ou mais</option>
+                    </select>
+                </label>
+                <label>Jogador
+                    <input type="search" id="tr-player" placeholder="Nome do jogador" autocomplete="off">
+                </label>
+                <label class="tr-check">
+                    <input type="checkbox" id="tr-bets"> Só apostas com valor
+                </label>
+            </div>
+
+            <div class="stats-grid tr-kpis">
+                <div class="stat-card">
+                    <div class="stat-label">Previsões avaliadas</div>
+                    <div id="tr-kpi-total" class="stat-value">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Taxa de acerto</div>
+                    <div id="tr-kpi-acc" class="stat-value">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Apostas com valor</div>
+                    <div id="tr-kpi-bets" class="stat-value">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">ROI das apostas</div>
+                    <div id="tr-kpi-roi" class="stat-value">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Lucro (% da banca)</div>
+                    <div id="tr-kpi-profit" class="stat-value">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Maior queda da banca</div>
+                    <div id="tr-kpi-drawdown" class="stat-value">--</div>
+                </div>
+            </div>
+
+            <div class="charts-section">
+                <div class="chart-card">
+                    <h3>Banca acumulada</h3>
+                    <canvas id="trBankrollChart" role="img" aria-label="Gráfico de linha: lucro acumulado das apostas sugeridas, em percentagem da banca"></canvas>
+                    <p id="tr-bankroll-empty" class="tr-empty" hidden>Ainda não há apostas com stake registadas neste filtro. O lucro passa a ser registado a partir das comparações diárias novas.</p>
+                </div>
+                <div class="chart-card">
+                    <h3>Calibração: confiança vs. acerto real</h3>
+                    <canvas id="trCalibrationChart" role="img" aria-label="Gráfico de barras: confiança média prevista e taxa de acerto real por faixa de confiança"></canvas>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Jogo a jogo</h2>
+                <p id="tr-count" class="tr-count" aria-live="polite"></p>
+                <div class="tr-table-wrap" role="region" aria-label="Tabela do histórico (desliza na horizontal)" tabindex="0">
+                    <table class="tr-table">
+                        <caption class="sr-only">Previsões avaliadas, da mais recente para a mais antiga</caption>
+                        <thead>
+                            <tr>
+                                <th scope="col">Data</th>
+                                <th scope="col">Torneio</th>
+                                <th scope="col">Jogo</th>
+                                <th scope="col">Previsão</th>
+                                <th scope="col">Resultado</th>
+                                <th scope="col">Odd</th>
+                                <th scope="col">Stake</th>
+                                <th scope="col">Lucro</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tr-body"></tbody>
+                    </table>
+                </div>
+                <button type="button" id="tr-more" class="tab-status-retry tr-more" hidden>Mostrar mais</button>
             </div>
         </div>
 
@@ -1949,6 +2210,9 @@
             }
             if (targetTab === 'clustering' && !window.clusteringLoaded) {
                 loadClustering();
+            }
+            if (targetTab === 'historico' && !window.trackLoaded) {
+                loadTrackRecord();
             }
         });
 
@@ -2776,6 +3040,238 @@
                     }
                 }
             });
+        }
+
+        // ==================== HISTÓRICO (TRACK RECORD) ====================
+        // Uma linha por previsão avaliada: {date, tourney, surface, p1, p2, pick, winner, score,
+        // conf, correct, odd, stake (fração da banca), profit (fração da banca)}.
+        let trackRecord = [];
+        let trBankrollChart = null;
+        let trCalibrationChart = null;
+        const TR_PAGE_SIZE = 50;
+        let trVisible = TR_PAGE_SIZE;
+
+        const pct = (value, digits = 1) => `${(value * 100).toFixed(digits)}%`;
+        const signedPct = (value, digits = 2) => `${value > 0 ? '+' : ''}${(value * 100).toFixed(digits)}%`;
+        const formatDatePt = iso => {
+            const [y, m, d] = String(iso || '').split('-');
+            return d ? `${d}/${m}/${y}` : String(iso || '');
+        };
+
+        async function loadTrackRecord() {
+            if (window.trLoading) return;
+            window.trLoading = true;
+            setTabStatus('tab-historico', 'loading', 'A carregar o histórico de previsões…');
+            try {
+                const data = await getJSON('analytics/track_record.json');
+                trackRecord = Array.isArray(data) ? data : [];
+                populateTrackFilters();
+                bindTrackFilters();
+                renderTrackRecord();
+                window.trackLoaded = true;
+                if (trackRecord.length) {
+                    setTabStatus('tab-historico', 'ok');
+                } else {
+                    setTabStatus('tab-historico', 'empty', 'Ainda não há previsões avaliadas. O histórico enche-se com as comparações diárias.');
+                }
+            } catch (error) {
+                console.error('Erro ao carregar histórico:', error);
+                setTabStatus('tab-historico', 'error',
+                    'Não foi possível carregar o histórico. Verifique a ligação e tente de novo.', loadTrackRecord);
+                window.trackLoaded = false;
+            } finally {
+                window.trLoading = false;
+            }
+        }
+
+        function populateTrackFilters() {
+            const fill = (selectId, values) => {
+                const select = document.getElementById(selectId);
+                select.querySelectorAll('option:not([value="all"])').forEach(o => o.remove());
+                values.forEach(value => {
+                    const option = document.createElement('option');
+                    option.value = value;
+                    option.textContent = value;
+                    select.appendChild(option);
+                });
+            };
+            const uniq = key => [...new Set(trackRecord.map(r => r[key]).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+            fill('tr-tourney', uniq('tourney'));
+            fill('tr-surface', uniq('surface'));
+        }
+
+        function bindTrackFilters() {
+            if (window.trFiltersBound) return;
+            window.trFiltersBound = true;
+            ['tr-period', 'tr-tourney', 'tr-surface', 'tr-conf', 'tr-bets'].forEach(id =>
+                document.getElementById(id).addEventListener('change', () => { trVisible = TR_PAGE_SIZE; renderTrackRecord(); }));
+            document.getElementById('tr-player').addEventListener('input', () => { trVisible = TR_PAGE_SIZE; renderTrackRecord(); });
+            document.getElementById('tr-more').addEventListener('click', () => { trVisible += TR_PAGE_SIZE; renderTrackTable(filteredTrackRecord()); });
+        }
+
+        function filteredTrackRecord() {
+            const period = document.getElementById('tr-period').value;
+            const tourney = document.getElementById('tr-tourney').value;
+            const surface = document.getElementById('tr-surface').value;
+            const minConf = Number(document.getElementById('tr-conf').value) || 0;
+            const player = document.getElementById('tr-player').value.trim().toLowerCase();
+            const onlyBets = document.getElementById('tr-bets').checked;
+            // "Últimos N dias" contam a partir da última previsão avaliada (os dados podem não ser de hoje)
+            const lastDate = trackRecord.reduce((max, r) => (r.date > max ? r.date : max), '');
+            const cutoff = period === 'all' || !lastDate ? '' :
+                new Date(new Date(lastDate).getTime() - Number(period) * 86400000).toISOString().slice(0, 10);
+
+            return trackRecord.filter(r =>
+                (!cutoff || r.date > cutoff) &&
+                (tourney === 'all' || r.tourney === tourney) &&
+                (surface === 'all' || r.surface === surface) &&
+                (Number(r.conf) || 0) >= minConf &&
+                (!onlyBets || r.stake > 0) &&
+                (!player || `${r.p1} ${r.p2}`.toLowerCase().includes(player))
+            );
+        }
+
+        function trackSummary(rows) {
+            const bets = rows.filter(r => r.stake > 0).sort((a, b) => a.date.localeCompare(b.date));
+            const staked = bets.reduce((sum, r) => sum + r.stake, 0);
+            let cumulative = 0, peak = 0, maxDrawdown = 0;
+            const curve = new Map();
+            bets.forEach(r => {
+                cumulative += Number(r.profit) || 0;
+                peak = Math.max(peak, cumulative);
+                maxDrawdown = Math.max(maxDrawdown, peak - cumulative);
+                curve.set(r.date, cumulative);
+            });
+            return {
+                total: rows.length,
+                correct: rows.filter(r => r.correct).length,
+                bets: bets.length,
+                staked,
+                profit: cumulative,
+                roi: staked > 0 ? cumulative / staked : null,
+                maxDrawdown,
+                curve,
+            };
+        }
+
+        function renderTrackRecord() {
+            const rows = filteredTrackRecord();
+            const s = trackSummary(rows);
+            const setKpi = (id, text, cls = '') => {
+                const el = document.getElementById(id);
+                el.textContent = text;
+                el.classList.toggle('stat-positive', cls === 'pos');
+                el.classList.toggle('stat-negative', cls === 'neg');
+            };
+            const tone = v => (v > 0 ? 'pos' : v < 0 ? 'neg' : '');
+            setKpi('tr-kpi-total', String(s.total));
+            setKpi('tr-kpi-acc', s.total ? pct(s.correct / s.total) : '--');
+            setKpi('tr-kpi-bets', String(s.bets));
+            setKpi('tr-kpi-roi', s.roi === null ? '--' : signedPct(s.roi, 1), s.roi === null ? '' : tone(s.roi));
+            setKpi('tr-kpi-profit', s.bets ? signedPct(s.profit) : '--', s.bets ? tone(s.profit) : '');
+            setKpi('tr-kpi-drawdown', s.bets ? `-${(s.maxDrawdown * 100).toFixed(2)}%` : '--');
+
+            renderTrackBankroll(s);
+            renderTrackCalibration(rows);
+            renderTrackTable(rows);
+        }
+
+        const chartAxis = { ticks: { color: '#cfcbe6' }, grid: { color: 'rgba(255,255,255,0.08)' } };
+
+        function renderTrackBankroll(summary) {
+            const canvas = document.getElementById('trBankrollChart');
+            const empty = document.getElementById('tr-bankroll-empty');
+            if (trBankrollChart) { trBankrollChart.destroy(); trBankrollChart = null; }
+            const hasBets = summary.bets > 0;
+            canvas.hidden = !hasBets;
+            empty.hidden = hasBets;
+            if (!hasBets || typeof Chart === 'undefined') return;
+            const labels = [...summary.curve.keys()];
+            trBankrollChart = new Chart(canvas, {
+                type: 'line',
+                data: {
+                    labels: labels.map(formatDatePt),
+                    datasets: [{
+                        label: 'Lucro acumulado (% da banca)',
+                        data: labels.map(d => Number((summary.curve.get(d) * 100).toFixed(2))),
+                        borderColor: '#a78bfa',
+                        backgroundColor: 'rgba(167, 139, 250, 0.15)',
+                        fill: true,
+                        tension: 0.25,
+                        pointRadius: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: '#cfcbe6' } } },
+                    scales: { x: chartAxis, y: { ...chartAxis, ticks: { ...chartAxis.ticks, callback: v => `${v}%` } } }
+                }
+            });
+        }
+
+        function renderTrackCalibration(rows) {
+            const canvas = document.getElementById('trCalibrationChart');
+            if (trCalibrationChart) { trCalibrationChart.destroy(); trCalibrationChart = null; }
+            if (typeof Chart === 'undefined') return;
+            const bins = [[50, 60], [60, 70], [70, 80], [80, 90], [90, 101]];
+            const stats = bins.map(([lo, hi]) => {
+                const inBin = rows.filter(r => r.conf >= lo && r.conf < hi);
+                return {
+                    label: `${lo}–${Math.min(hi, 100)}%`,
+                    n: inBin.length,
+                    predicted: inBin.length ? inBin.reduce((sum, r) => sum + r.conf, 0) / inBin.length : null,
+                    actual: inBin.length ? (inBin.filter(r => r.correct).length / inBin.length) * 100 : null,
+                };
+            });
+            trCalibrationChart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: stats.map(s => `${s.label} (${s.n})`),
+                    datasets: [
+                        { label: 'Confiança média prevista', data: stats.map(s => s.predicted), backgroundColor: 'rgba(167, 139, 250, 0.35)', borderColor: '#a78bfa', borderWidth: 1 },
+                        { label: 'Acerto real', data: stats.map(s => s.actual), backgroundColor: 'rgba(74, 222, 128, 0.55)', borderColor: '#4ade80', borderWidth: 1 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: '#cfcbe6' } },
+                        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y === null ? '—' : ctx.parsed.y.toFixed(1) + '%'}` } }
+                    },
+                    scales: { x: chartAxis, y: { ...chartAxis, min: 0, max: 100, ticks: { ...chartAxis.ticks, callback: v => `${v}%` } } }
+                }
+            });
+        }
+
+        function renderTrackTable(rows) {
+            const body = document.getElementById('tr-body');
+            const sorted = [...rows].sort((a, b) => b.date.localeCompare(a.date));
+            const visible = sorted.slice(0, trVisible);
+            body.textContent = '';
+            const cell = (text, className = '') => {
+                const td = document.createElement('td');
+                td.textContent = text;
+                if (className) td.className = className;
+                return td;
+            };
+            visible.forEach(r => {
+                const tr = document.createElement('tr');
+                tr.appendChild(cell(formatDatePt(r.date), 'tr-nowrap'));
+                tr.appendChild(cell([r.tourney, r.surface].filter(Boolean).join(' · ')));
+                tr.appendChild(cell(`${r.p1} vs ${r.p2}`));
+                tr.appendChild(cell(`${r.pick}${r.conf ? ` (${Number(r.conf).toFixed(1)}%)` : ''}`));
+                const result = cell(`${r.correct ? '✓ Acertou' : '✗ Falhou'}${r.score ? ` · ${r.score}` : ''}`, r.correct ? 'tr-ok' : 'tr-fail');
+                tr.appendChild(result);
+                tr.appendChild(cell(r.odd ? Number(r.odd).toFixed(2) : '—', 'tr-num'));
+                tr.appendChild(cell(r.stake > 0 ? pct(r.stake) : '—', 'tr-num'));
+                tr.appendChild(cell(r.stake > 0 ? signedPct(Number(r.profit) || 0) : '—',
+                    `tr-num ${r.stake > 0 ? ((r.profit || 0) > 0 ? 'tr-ok' : 'tr-fail') : ''}`));
+                body.appendChild(tr);
+            });
+            document.getElementById('tr-count').textContent = rows.length
+                ? `A mostrar ${visible.length} de ${rows.length} previsões`
+                : 'Nenhuma previsão corresponde aos filtros.';
+            document.getElementById('tr-more').hidden = visible.length >= sorted.length;
         }
 
         // Pequena espera mínima só para evitar um "flash" do ecrã de loading
