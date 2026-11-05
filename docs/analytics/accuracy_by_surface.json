@@ -12,12 +12,6 @@
     "accuracy": 85.71
   },
   {
-    "surface": "Rotterdam",
-    "total_predictions": 4,
-    "correct": 2,
-    "accuracy": 50.0
-  },
-  {
     "surface": "Brisbane",
     "total_predictions": 8,
     "correct": 3,
