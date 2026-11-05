@@ -216,12 +216,6 @@
     "accuracy": 55.81
   },
   {
-    "surface": "Paris",
-    "total_predictions": 36,
-    "correct": 20,
-    "accuracy": 55.56
-  },
-  {
     "surface": "Bucharest",
     "total_predictions": 9,
     "correct": 5,
@@ -232,6 +226,12 @@
     "total_predictions": 71,
     "correct": 38,
     "accuracy": 53.52
+  },
+  {
+    "surface": "Paris",
+    "total_predictions": 48,
+    "correct": 25,
+    "accuracy": 52.08
   },
   {
     "surface": "Estoril",

@@ -1,0 +1,58 @@
+[
+    {
+        "Torneio":"Paris",
+        "Jogador 1":"Taylor Fritz",
+        "Jogador 2":"Carlos Alcaraz",
+        "Vencedor Previsto":"Carlos Alcaraz",
+        "Confiança (%)":85.2,
+        "ELO Diff":-274.7,
+        "H2H":"1-5 (17% para Taylor Fritz)",
+        "Odd 1":3.3,
+        "Odd 2":1.33,
+        "Superfície":"Hard",
+        "Valor Aposta":0.4040000141,
+        "ROI Esperado (%)":13.3000001907
+    },
+    {
+        "Torneio":"Paris",
+        "Jogador 1":"Ben Shelton",
+        "Jogador 2":"Tommy Paul",
+        "Vencedor Previsto":"Ben Shelton",
+        "Confiança (%)":71.0,
+        "ELO Diff":60.6,
+        "H2H":"2-2 (50% para Ben Shelton)",
+        "Odd 1":2.11,
+        "Odd 2":1.73,
+        "Superfície":"Hard",
+        "Valor Aposta":0.4480000138,
+        "ROI Esperado (%)":49.7999992371
+    },
+    {
+        "Torneio":"Paris",
+        "Jogador 1":"Casper Ruud",
+        "Jogador 2":"Nuno Borges",
+        "Vencedor Previsto":"Casper Ruud",
+        "Confiança (%)":66.0,
+        "ELO Diff":42.9,
+        "H2H":"2-1 (67% para Casper Ruud)",
+        "Odd 1":1.52,
+        "Odd 2":2.49,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0049999999,
+        "ROI Esperado (%)":0.3000000119
+    },
+    {
+        "Torneio":"Paris",
+        "Jogador 1":"Luca Van Assche",
+        "Jogador 2":"Rinky Hijikata",
+        "Vencedor Previsto":"Luca Van Assche",
+        "Confiança (%)":50.9,
+        "ELO Diff":-36.1,
+        "H2H":"Igual (sem confrontos anteriores)",
+        "Odd 1":1.58,
+        "Odd 2":2.36,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    }
+]
