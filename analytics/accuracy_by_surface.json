@@ -229,9 +229,9 @@
   },
   {
     "surface": "Paris",
-    "total_predictions": 48,
-    "correct": 25,
-    "accuracy": 52.08
+    "total_predictions": 55,
+    "correct": 29,
+    "accuracy": 52.73
   },
   {
     "surface": "Estoril",
