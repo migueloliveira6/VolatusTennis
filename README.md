@@ -1,471 +1,395 @@
 # VolatusTennis
 
-[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
-[![GitHub Actions](https://img.shields.io/badge/CI/CD-GitHub%20Actions-2088FF.svg)](https://github.com/features/actions)
-[![GitHub Pages](https://img.shields.io/badge/Deploy-GitHub%20Pages-222222.svg)](https://pages.github.com/)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![GitHub Pages](https://img.shields.io/badge/Deploy-GitHub%20Pages-222222.svg)](https://volatustennis.me)
 [![Daily Tennis Predictions](https://github.com/migueloliveira6/VolatusTennis/actions/workflows/predictions.yml/badge.svg)](https://github.com/migueloliveira6/VolatusTennis/actions/workflows/predictions.yml)
 
-Um sistema automatizado de previsão de resultados de ténis utilizando Machine Learning, com pipeline CI/CD completa e interface web interativa.
+Previsões diárias de jogos de ténis ATP com machine learning: probabilidades calibradas, ELO por superfície, valor das odds e histórico público de acertos.
+
+🌐 **Site:** [volatustennis.me](https://volatustennis.me)
 
 ## Índice
 
-- [Sobre o Projeto](#-sobre-o-projeto)
-- [Funcionalidades](#-funcionalidades)
-- [Tecnologias](#-tecnologias)
-- [Arquitetura](#-arquitetura)
-- [Instalação](#-instalação)
-- [Uso](#-uso)
-- [Pipeline CI/CD](#-pipeline-cicd)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Modelo de Machine Learning](#-modelo-de-machine-learning)
-- [API e Dados](#-api-e-dados)
-- [Contribuir](#-contribuir)
-- [Contacto](#-contacto)
+- [Sobre o projeto](#sobre-o-projeto)
+- [O site](#o-site)
+- [Arquitetura](#arquitetura)
+- [Instalação](#instalação)
+- [Uso](#uso)
+- [Modelo de machine learning](#modelo-de-machine-learning)
+- [Pipeline diária (CI/CD)](#pipeline-diária-cicd)
+- [Formatos de dados](#formatos-de-dados)
+- [Estrutura do projeto](#estrutura-do-projeto)
+- [Clustering de estilos de jogo](#clustering-de-estilos-de-jogo)
+- [Contribuir](#contribuir)
+- [Agradecimentos e contacto](#agradecimentos-e-contacto)
 
-  
-## Agradecimentos
+## Sobre o projeto
 
-- [TennisExplorer](https://www.tennisexplorer.com/) - Fonte de dados
-- [XGBoost](https://xgboost.readthedocs.io/) - Framework de ML
-- [Chart.js](https://www.chartjs.org/) - Visualizações
-- [GitHub Actions](https://github.com/features/actions) - CI/CD
-- Comunidade Python e Machine Learning
-- [Repositório JeffSackman](https://github.com/JeffSackmann/tennis_atp) - Fonte de dados
+O **VolatusTennis** prevê o vencedor dos jogos ATP do dia seguinte e publica as previsões num site estático. Combina:
 
-## Sobre o Projeto
+- **Modelo XGBoost** treinado com jogos ATP, Challenger e qualifying desde 2000, com ELO por superfície calculado dentro do modelo, ranking, forma recente, confrontos diretos e estatísticas de serviço/resposta.
+- **Probabilidades calibradas** e **apostas com Kelly fracionado**: o site mostra a probabilidade de cada jogador, se as odds têm valor e o stake sugerido em % da banca.
+- **Pipeline automática** em GitHub Actions: compara as previsões de ontem com os resultados reais, faz scraping dos jogos de amanhã, gera previsões e publica no GitHub Pages.
+- **Histórico público**: cada previsão avaliada fica registada com o resultado, as odds e o lucro da aposta sugerida.
+- **Notificações no Telegram** com as previsões e o resumo do dia anterior.
 
-O **VolatusTennis** é um sistema completo de previsão de resultados de ténis que combina:
+> As previsões são informação estatística e não aconselhamento de apostas.
 
-- **Machine Learning**: Modelo XGBoost com sistema de ELO dinâmico por superfície
-- **Web Scraping**: Extração automática de dados de partidas e odds
-- **Automação**: Pipeline CI/CD com GitHub Actions
-- **Interface Web**: Dashboard interativo hospedado no GitHub Pages
-- **Notificações**: Sistema de alertas via Telegram
+## O site
 
-### Características Principais
+| Separador | Conteúdo |
+|---|---|
+| **Previsões** | Jogos de amanhã por torneio: vencedor previsto, probabilidade, diferença de ELO, H2H, odds, stake sugerido e ROI esperado. Filtros por torneio e "Só com valor". |
+| **Estatísticas** | Taxa de acerto global, evolução mensal, acerto por faixa de confiança, Top 10 por superfície e evolução do ELO. |
+| **Histórico** | Cada previsão avaliada, jogo a jogo, com filtros (período, torneio, superfície, confiança, jogador, só apostas), ROI e lucro das apostas sugeridas, curva da banca, maior queda e gráfico de calibração (confiança vs. acerto real). |
+| **Clustering** | Estilos de jogo dos jogadores por temporada: mapa 2D, distribuição por cluster, evolução e radar do perfil, com pesquisa por jogador. |
 
-- ✅ Previsões diárias automáticas
-- ✅ Sistema de ELO com decaimento temporal
-- ✅ Análise por superfície (Hard, Clay, Grass)
-- ✅ Cálculo de ROI e valor esperado
-- ✅ Histórico Head-to-Head (H2H)
-- ✅ Dashboard web responsivo
-- ✅ Deploy automático via GitHub Pages
-
-## Funcionalidades
-
-### 1. Previsões Automáticas
-
-- Scraping diário do site TennisExplorer
-- Processamento de dados com validação de superfície
-- Geração de previsões usando modelo treinado
-- Exportação para CSV e JSON
-
-### 2. Sistema de Rating ELO
-
-- **ELO dinâmico por superfície**: Hard, Clay, Grass
-- **K-Factor variável**: 
-  - ATP: 32
-  - Challenger: 20
-- **Decaimento temporal**: Partidas mais antigas têm menor impacto
-- **Fator mínimo**: 30% para jogos muito antigos
-
-### 3. Interface Web
-
-- Filtros por torneio e superfície
-- Design responsivo (mobile-friendly)
-
-### 4. Notificações Telegram
-
-- Envio automático de previsões
-- Formatação clara e concisa
-- Suporte para mensagens longas (divisão automática)
-
-## Tecnologias
-
-### Backend
-
-- **Python 3.8+**
-  - pandas: Manipulação de dados
-  - numpy: Operações numéricas
-  - scikit-learn: Preprocessing e métricas
-  - XGBoost: Modelo de ML
-  - BeautifulSoup4: Web scraping
-  - requests: Requisições HTTP
-  - joblib: Serialização de modelos
-
-### Frontend
-
-- **HTML5/CSS3/JavaScript**
-- **Chart.js**: Visualização de dados
-- **Design Responsivo**: Mobile-first
-
-### DevOps
-
-- **GitHub Actions**: CI/CD
-- **GitHub Pages**: Hosting
-- **Python Virtual Environment**: Isolamento de dependências
+O site é uma página única (`docs/index.html`) em HTML, CSS e JavaScript com [Chart.js](https://www.chartjs.org/). Funciona em telemóvel e com teclado e leitores de ecrã (separadores e pesquisa com WAI-ARIA).
 
 ## Arquitetura
 
 ```
-┌─────────────────┐
-│  GitHub Actions │
-│   (Scheduler)   │
-└────────┬────────┘
-         │ Trigger diário (22:50 UTC)
-         ▼
-┌─────────────────┐
-│  Scraping Bot   │
-│  (Python)       │
-└────────┬────────┘
-         │ Extrai dados
-         ▼
-┌─────────────────┐
-│ Data Processing │
-│ (Pandas/NumPy)  │
-└────────┬────────┘
-         │ Normaliza e valida
-         ▼
-┌─────────────────┐
-│  ML Model       │
-│  (XGBoost+ELO)  │
-└────────┬────────┘
-         │ Gera previsões
-         ▼
-┌─────────────────┐
-│  Export Data    │
-│  (CSV/JSON)     │
-└────────┬────────┘
-         │ Salva em docs/predicts/
-         ▼
-┌─────────────────┐
-│  GitHub Pages   │
-│  (Web Deploy)   │
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────┐
-│ Telegram Bot    │
-│ (Notifications) │
-└─────────────────┘
+ ┌────────────── Atualização manual dos dados ──────────────┐
+ │                                                           │
+ │  TennisAbstract (Sackmann) ── tennis_scraper_2026.py      │
+ │        │                                                  │
+ │        ▼                                                  │
+ │  notebook clean_player_name ── CSV normalizado            │
+ │        │                                                  │
+ │        ▼                                                  │
+ │  update_from_csv.py ──► BD SQLite (datasets/*.db)         │
+ │                              │                            │
+ │                              ▼                            │
+ │                     train_model.py ──► models/*.pkl ──► commit
+ └───────────────────────────────────────────────────────────┘
+
+ ┌────────────── Pipeline diária (GitHub Actions) ──────────┐
+ │  cron-job.org ── repository_dispatch                      │
+ │        ▼                                                  │
+ │  restaura estado do gh-pages (analytics + histórico)      │
+ │        ▼                                                  │
+ │  compare_predictions_results.py  (previsões de ontem      │
+ │        │                          vs. resultados reais)   │
+ │        ▼                                                  │
+ │  engine.py  (TennisExplorer: jogos + odds de amanhã       │
+ │        │     → previsões → Telegram)                      │
+ │        ▼                                                  │
+ │  generate_predictions.py · generate_analytics.py          │
+ │        ▼                                                  │
+ │  deploy de docs/ para o gh-pages ──► volatustennis.me     │
+ └───────────────────────────────────────────────────────────┘
 ```
+
+A base de dados SQLite tem mais de 100 MB e **não está no git**. O modelo treinado (`models/*.pkl`, cerca de 19 MB) está, e é o que a pipeline diária usa.
 
 ## Instalação
 
 ### Pré-requisitos
 
-- Python 3.12 ou superior
-- pip (gestor de pacotes Python)
+- Python 3.10 ou superior (o CI usa 3.10)
 - Git
 
-### Clonar o Repositório
+### Passos
 
 ```bash
-git clone https://github.com/username/VolatusTennis.git
-cd volatustennis
+git clone https://github.com/migueloliveira6/VolatusTennis.git
+cd VolatusTennis
+python -m venv .venv
 ```
 
-### Configurar Ambiente Virtual
+Ativar o ambiente virtual:
 
 ```bash
-# Criar ambiente virtual
-python -m venv venv
-
-# Ativar (Linux/Mac)
-source venv/bin/activate
-
-# Ativar (Windows)
-venv\Scripts\activate
+# Windows (PowerShell)
+.venv\Scripts\Activate.ps1
+# Linux/macOS
+source .venv/bin/activate
 ```
-
-### Instalar Dependências
 
 ```bash
 pip install -r requirements.txt
 ```
 
-### Configurar Variáveis de Ambiente
+### Variáveis de ambiente
 
-Crie um arquivo `.env` na raiz do projeto:
+Crie um ficheiro `.env` na raiz (não vai para o git):
+
+| Variável | Para quê | Default |
+|---|---|---|
+| `DB_PATH` | BD SQLite com os jogos | `datasets/tennis_data.db` (o `update_from_csv.py` usa `tennis_data_2026_v3.db`) |
+| `MODEL_PATH` | Pasta dos modelos | `models` |
+| `PREVISOES_PATH` | Pasta dos CSV de previsões e comparações | `previsoes` |
+| `CSV_PATH` | CSV de jogos novos para o `update_from_csv.py` | `datasets/dataset_2026_normalizado_v5.csv` |
+| `NAME_LOOKUP` | Mapeamento de nomes TennisExplorer → Sackmann | `notebooks/name_lookup.csv` |
+| `TOKEN_BOT`, `CHAT_ID` | Bot do Telegram (opcional) | — |
+| `PREDICTIONS_JSON_URL` | `predictions.json` publicado (fallback do compare) | — |
+| `KELLY_FRACTION`, `MIN_EDGE`, `MAX_STAKE` | Gestão de banca | `0.25`, `0.02`, `0.05` |
+| `OPTUNA_TRIALS` | Nº de tentativas de afinação no treino | `10` |
+
+Exemplo:
 
 ```env
-# Paths
-MODEL_PATH=models/
-DATA_PATH=data/atp_chall_matches_2025_elo_temporal.csv
-RAW_DATA_ATP_PATH=data/atp_matches_
-RAW_DATA_CHALL_PATH=data/atp_matches_qual_chall_
-DATA_2025_PATH=data/dataset_2025_normalizado.csv
-OUTPUT_PATH=data/
-
-# Model Parameters
-K_FACTOR=32
-INITIAL_ELO=1500
-
-# Telegram (opcional)
-TELEGRAM_BOT_TOKEN=seu_token_aqui
-TELEGRAM_CHAT_ID=seu_chat_id_aqui
+DB_PATH=datasets/tennis_data_2026_v4.db
+MODEL_PATH=models
+PREVISOES_PATH=previsoes
+TOKEN_BOT=o_token_do_bot
+CHAT_ID=o_chat_id
 ```
 
 ## Uso
 
-### Executar Scraping e Previsões
+> ⚠️ O `src/engine.py` faz scraping e **envia mensagens para o Telegram**. Não o use para testar alterações; para isso use os testes ou `predict_match` diretamente.
+
+### Atualizar a base de dados com jogos novos
+
+O Sackmann publica os resultados dos torneios já terminados no TennisAbstract. Depois disso:
+
+1. Acrescentar os links dos torneios a `src/tennisabstract links tourn 26.txt` e o calendário (data e superfície) em `src/tennis_scraper_2026.py`, e correr o scraper.
+2. Normalizar os nomes dos jogadores com o notebook `notebooks/clean_player_name.ipynb`, que gera o CSV normalizado.
+3. Inserir os jogos novos na BD (primeiro em modo de teste):
 
 ```bash
-# Executar notebook principal
-jupyter notebook notebooks/scraping_bottelegram_optimized.ipynb
+python src/update_from_csv.py --dry-run
 ```
 
-### Treinar Modelo
+```bash
+python src/update_from_csv.py
+```
+
+O script só insere jogos que ainda não existem (mesmo vencedor, perdedor e ronda no mesmo torneio ou data), por isso pode ser corrido várias vezes.
+
+Para recalcular as colunas de ELO da BD (por exemplo, depois de entrarem torneios atrasados), use uma cópia (a BD original não é alterada):
 
 ```bash
+python src/recompute_elo.py --source-db datasets/tennis_data_2026_v3.db --output-db datasets/tennis_data_2026_v4.db
+```
+
+### Treinar o modelo
+
+```bash
+python src/train_model.py
+```
+
+Treina com os jogos de 2000 até ao presente (cerca de 15 minutos). No fim:
+- substitui o modelo em `models/`;
+- regista as métricas em `models/manifest.json` e `metrics/metrics_history.csv`.
+
+Depois é só fazer commit dos dois `.pkl` canónicos para a pipeline diária os usar.
+
+Opções úteis:
+
+```bash
+# treino rápido de teste, sem tocar em models/
+python src/train_model.py --start-year 2022 --trials 5 --model-dir /tmp/modelo_teste
+
+# ver o resumo do modelo de produção
 python src/model_elo_xgboost.py
 ```
 
-### Visualizar Resultados
-
-Abra o arquivo `docs/index.html` num browser ou aceda à versão online:
-
-```
-https://volatustennis.me
-```
-
-### 🔎 Comparar Previsões com Resultados ✅
-
-Use o script `src/compare_predictions_results.py` para comparar as previsões geradas com os resultados reais e obter métricas simples (matched, accuracy, coverage).
-
-Comportamento padrão:
-- Se `--pred-file` não for fornecido, o script escolhe o ficheiro mais recente em `PREVISOES_PATH` (default: `previsoes/`).
-- Se a data não for fornecida em `--results-date`, o script tenta extrair uma data do nome do ficheiro (formato YYYY-MM-DD). Caso não consiga, usa a data de ontem.
-- Gera um CSV em `previsoes/comparacao_previsoes_YYYY-MM-DD.csv` com a correspondência entre previsão e resultado e flags `Matched` e `Correct`.
-
-Exemplos:
+### Comparar previsões com resultados
 
 ```bash
-# Comparar usando o ficheiro de previsões mais recente
-python src/compare_predictions_results.py
-
-# Comparar com um ficheiro específico e data explícita
-python src/compare_predictions_results.py \
-  --pred-file previsoes/previsoes_tenis_2025-07-01.csv \
-  --results-date 2025-07-01
+python src/compare_predictions_results.py --pred-json-file predictions_2026-11-05.json --results-date 2026-11-05
 ```
 
-Saída:
-- `comparacao_previsoes_YYYY-MM-DD.csv` — lista de previsões com colunas `Matched` (se foi encontrado jogo correspondente) e `Correct` (se o vencedor previsto corresponde ao vencedor real).
+O script gera `previsoes/comparacao_previsoes_<data>.csv` com o acerto, as odds, o stake e o lucro de cada previsão. Depois, `python src/generate_analytics.py` atualiza os JSON do site (estatísticas e histórico).
 
+### Testes
 
-## 🔄 Pipeline CI/CD
-
-O projeto utiliza GitHub Actions para automação completa:
-
-### Workflow Principal
-
-```yaml
-name: NeuroTennis Daily Predictions
-
-on:
-  schedule:
-    - cron: '0 23 * * *'  # Executa às 23:00 UTC diariamente
-  workflow_dispatch:      # Permite execução manual
-
-jobs:
-  predict:
-    runs-on: ubuntu-latest
-    steps:
-      - Checkout do código
-      - Configurar Python 3.8
-      - Instalar dependências
-      - Executar scraping
-      - Gerar previsões
-      - Commit e push dos resultados
-      - Deploy no GitHub Pages
-      - Enviar notificações Telegram
+```bash
+pytest -q
 ```
 
-### GitHub Pages
+### Ver o site localmente
 
-O deploy é automático após cada commit em `main`:
-
-- **Branch**: `gh-pages` (ou `main/docs`)
-- **Diretório**: `/docs`
-- **URL**: `https://migueloliveira6.github.io/neurotennis/`
-
-## 📁 Estrutura do Projeto
-
-```
-neurotennis/
-├── .github/
-│   └── workflows/
-│       └── predict.yml          # GitHub Actions workflow
-├── data/
-│   ├── atp_matches_*.csv        # Dados históricos ATP
-│   ├── atp_matches_qual_chall_*.csv
-│   └── dataset_2025_normalizado.csv
-├── docs/                        # GitHub Pages (Frontend)
-│   ├── index.html               # Dashboard principal
-│   ├── predicts/
-│   │   ├── predictions.json     # Previsões atuais
-│   │   ├── analytics.json       # Dados de análise
-│   │   └── previsoes_*.csv      # Histórico
-│   └── NeuroTennis.ico
-├── models/
-│   ├── tennis_surface_elo_model_xgboost.pkl
-│   ├── tennis_surface_elo_scaler_xgboost.pkl
-│   └── tennis_surface_elo_data_xgboost.pkl
-├── notebooks/
-│   ├── scraping_bottelegram_optimized.ipynb
-│   └── atp_chall_matches_2025_elo_kfactor.ipynb
-├── src/
-│   ├── model_elo_xgboost.py     # Modelo principal
-│   └── utils/
-├── requirements.txt
-├── .env.example
-├── .gitignore
-└── README.md
+```bash
+cd docs
+python -m http.server 8000
 ```
 
-## Modelo de Machine Learning
+Depois abra `http://localhost:8000`.
 
-### Sistema de ELO
+## Modelo de machine learning
 
-O sistema de rating utiliza uma implementação modificada do ELO:
+### ELO por superfície
 
-```python
-ELO_novo = ELO_antigo + K × (Resultado - Probabilidade_Esperada) × Fator_Temporal
-```
-
-Onde:
-- **K**: Fator de ajuste (32 para ATP, 20 para Challenger)
-- **Fator Temporal**: Decaimento exponencial baseado na data
-- **Superfície**: ELO separado para Hard, Clay e Grass
-
-### XGBoost Model
-
-```python
-Parâmetros otimizados:
-- n_estimators: 1100
-- learning_rate: 0.025
-- max_depth: 5
-- min_child_weight: 6
-- subsample: 0.8
-- colsample_bytree: 0.8
-```
-
-### Features Utilizadas
-
-- ELO do jogador (por superfície)
-- ELO do adversário (por superfície)
-- Diferença de ELO
-- Taxa de vitória H2H
-- Número de confrontos H2H
-- Taxa de vitória na superfície
-- Número de partidas na superfície
-
-### Métricas de Performance
+O ELO é calculado dentro do modelo, numa passagem cronológica pelos jogos (data → torneio → ronda), com uma classificação global e uma por superfície:
 
 ```
-Accuracy: ~65%
-F1-Score: ~0.65
-Log Loss: ~0.64
-Brier Score: ~0.22
+ELO_novo = ELO_antigo + K × (resultado − probabilidade_esperada)
+K = 250 / (n + 5)^0.4 × multiplicador
 ```
 
-## API e Dados
+- `n` é o nº de jogos que o jogador já disputou. Jogadores novos sobem e descem depressa; veteranos estabilizam.
+- O multiplicador vale 1.1 em Grand Slams e 0.85 em Challengers e qualifying.
+- Não há decaimento por ano civil.
 
-### Formato JSON (predictions.json)
+### Jogos especiais
+
+| Tipo | ELO | Exemplo de treino |
+|---|---|---|
+| Walkover (W/O) | não conta | não |
+| Abandono (RET), desclassificação, jogo interrompido | K × 0.5 | não |
+| Laver Cup (exibição) | não conta | não |
+| Davis Cup, Jogos Olímpicos, United/ATP Cup, qualifying | normal | sim |
+
+### Features
+
+Todas as features usam apenas jogos anteriores ao jogo a prever:
+
+| Grupo | Features |
+|---|---|
+| ELO | ELO global e por superfície, combinação dos dois, probabilidade ELO, nº de jogos |
+| Ranking | ranking (log), pontos, idade |
+| Forma | vitórias nos últimos 5/10/25/50 jogos, taxa de vitória na superfície |
+| H2H | taxa de vitória e nº de confrontos diretos |
+| Serviço/resposta | médias móveis exponenciais de pontos ganhos no serviço e na resposta (ajustadas à qualidade do adversário), aces e duplas faltas |
+| Contexto | superfície, nível do torneio, melhor de 3/5 sets, qualifying |
+
+Existem também features de **momentum** (variação do ELO em 30/90 dias) e **fadiga** (dias de descanso, jogos e minutos recentes). Estão desligadas por defeito porque, em produção, o estado dos jogadores fica congelado na data do último treino. Ativam-se com `--exclude-groups` sem valores.
+
+### Treino, avaliação e calibração
+
+- XGBoost com afinação de hiperparâmetros (Optuna + validação cruzada temporal).
+- Avaliação nos 15% de jogos mais recentes, nunca vistos no treino. Depois, novo treino com 100% dos dados.
+- **Previsão simétrica:** média de P(A vence B) e 1 − P(B vence A).
+- **Calibração** das probabilidades (Platt ou isotónica), escolhida num bloco temporal próprio.
+
+Resultados no holdout (cerca de 39 mil jogos completos, ago/2023 – out/2026):
+
+| | Log loss | Brier | Accuracy | AUC |
+|---|---|---|---|---|
+| **VolatusTennis** | **0.604** | **0.209** | **66.8%** | **0.733** |
+| Só ELO | 0.625 | 0.218 | 65.0% | 0.707 |
+| Pontos de ranking | 0.658 | 0.229 | 62.7% | 0.681 |
+| Mais bem classificado ganha | — | — | 63.5% | — |
+
+Só jogos ATP: log loss 0.600, accuracy 66.7%.
+
+### Valor das apostas
+
+O "Stake sugerido" é calculado com **¼ do critério de Kelly**:
+- só há aposta quando a probabilidade do modelo supera a implícita na odd em pelo menos 2 pontos percentuais;
+- o stake nunca passa de 5% da banca.
+
+Estes valores são configuráveis no `.env`.
+
+## Pipeline diária (CI/CD)
+
+O workflow `.github/workflows/predictions.yml` corre todos os dias. É disparado pelo [cron-job.org](https://cron-job.org) através de um `repository_dispatch` (`run-daily-predictions`).
+
+1. Restaura do branch `gh-pages` o estado acumulado: `docs/analytics/*.json` (estatísticas e histórico) e os snapshots `docs/predicts/history/`.
+2. **Compara** as previsões de ontem (snapshot do dia) com os resultados reais.
+3. **Faz scraping** dos jogos e odds de amanhã no TennisExplorer, **gera as previsões** com o modelo em `models/` e **envia-as para o Telegram**.
+4. Gera `docs/predicts/predictions.json` e atualiza as estatísticas e o `track_record.json`.
+5. Guarda o snapshot do dia e publica `docs/` no `gh-pages`, que serve [volatustennis.me](https://volatustennis.me).
+
+O estado do site vive no `gh-pages`. Os JSON de `docs/analytics` e `docs/predicts` no `main` não são a fonte de verdade.
+
+## Formatos de dados
+
+### `docs/predicts/predictions.json`
 
 ```json
 [
   {
-    "Torneio": "Shanghai",
-    "Jogador 1": "Carlos Alcaraz",
-    "Jogador 2": "Jannik Sinner",
-    "Vencedor Previsto": "Carlos Alcaraz",
-    "Confiança (%)": 67.3,
-    "ELO Diff": 45.2,
-    "H2H": "5-3 (62% para Carlos Alcaraz)",
-    "Odd 1": 1.85,
-    "Odd 2": 2.10,
+    "Torneio": "Paris",
+    "Jogador 1": "Jannik Sinner",
+    "Jogador 2": "Ben Shelton",
+    "Vencedor Previsto": "Jannik Sinner",
+    "Confiança (%)": 74.2,
+    "ELO Diff": 210.5,
+    "H2H": "5-1 (83% para Jannik Sinner)",
+    "Odd 1": 1.35,
+    "Odd 2": 3.2,
     "Superfície": "Hard",
-    "Valor Aposta": 0.125,
-    "ROI Esperado (%)": 8.5
+    "Valor Aposta": 0.012,
+    "ROI Esperado (%)": 0.2
   }
 ]
 ```
 
-### Formato CSV
+`Valor Aposta` é o stake sugerido como fração da banca (0.012 = 1,2%). O CSV equivalente fica em `previsoes/previsoes_tenis_<data>.csv`.
 
-O mesmo formato está disponível em CSV em `docs/predicts/previsoes_YYYY-MM-DD.csv`
+### `docs/analytics/track_record.json`
 
-## 🤝 Contribuir
+Uma linha por previsão avaliada (alimenta o separador Histórico):
 
-Contribuições são bem-vindas! Por favor:
+```json
+{"date": "2026-11-05", "tourney": "Paris", "surface": "Hard", "p1": "Jannik Sinner", "p2": "Ben Shelton",
+ "pick": "Jannik Sinner", "winner": "Jannik Sinner", "score": "6-4 7-6(3)", "conf": 74.2,
+ "correct": true, "odd": 1.35, "stake": 0.012, "profit": 0.0042}
+```
 
-1. Fork o projeto
-2. Crie uma branch para a sua feature (`git checkout -b feature/AmazingFeature`)
-3. Commit as mudanças (`git commit -m 'Add some AmazingFeature'`)
-4. Push para a branch (`git push origin feature/AmazingFeature`)
-5. Abra um Pull Request
+## Estrutura do projeto
 
-### Guidelines
+```
+VolatusTennis/
+├── .github/workflows/
+│   └── predictions.yml         # pipeline diária
+├── docs/                       # site (GitHub Pages)
+│   ├── index.html
+│   ├── img/                    # logo, ícones, imagem de partilha
+│   ├── predicts/               # previsões do dia + snapshots
+│   ├── analytics/              # estatísticas, histórico, clustering
+│   └── data/                   # top 10 e evolução do ELO
+├── models/                     # modelo de produção (+ manifest.json)
+├── src/
+│   ├── engine.py               # produção: scraping → previsões → Telegram
+│   ├── model_elo_xgboost.py    # TennisPredictor (treino e previsão)
+│   ├── features.py             # estado dos jogadores e features
+│   ├── evaluation.py           # métricas, baselines, calibração
+│   ├── train_model.py          # ponto único de treino
+│   ├── elo_calculator.py       # ELO com K dinâmico
+│   ├── match_policy.py         # walkovers, abandonos, exibições, ordem das rondas
+│   ├── db.py                   # acesso à BD SQLite
+│   ├── update_from_csv.py      # inserir jogos novos na BD
+│   ├── recompute_elo.py        # recalcular o ELO numa cópia da BD
+│   ├── tennis_scraper_2026.py  # scraping TennisAbstract
+│   ├── compare_predictions_results.py
+│   ├── generate_predictions.py
+│   ├── generate_analytics.py
+│   └── track_record.py         # histórico jogo a jogo
+├── clustering/style_clustering/ # clustering de estilos de jogo
+├── notebooks/                  # exploração e limpeza de nomes
+├── tests/                      # pytest
+├── main.py                     # CLI do clustering
+├── streamlit_app.py            # explorador do clustering
+└── requirements.txt
+```
 
-- Siga PEP 8 para código Python
-- Adicione testes para novas features
-- Atualize a documentação quando necessário
-- Mantenha mensagens de commit claras e descritivas
+## Clustering de estilos de jogo
 
-## Contacto
-
-LinkedIn: [LinkedIn](https://www.linkedin.com/in/luis-oliveira6)
-
-Link do Projeto: [https://github.com/migueloliveira6/VolatusTennis](https://github.com/migueloliveira6/VolatusTennis)
-
-Website: [https://migueloliveira6.github.io/VolatusTennis/](https://migueloliveira6.github.io/VolatusTennis/)
-
----
-
-⭐ **Se este projeto te foi útil, considera dar uma estrela!** ⭐
-
-## Clustering de Estilo de Jogo
-
-Foi adicionado um pipeline separado para clustering de jogadores ATP por temporada, usando a base SQLite existente em `datasets/tennis_data.db`.
-
-### O que faz
-
-- Carrega as partidas diretamente da tabela `matches`
-- Constrói observações no nível player-season
-- Calcula features de serviço, retorno, superfície e agressividade
-- Compara KMeans, GMM, clustering hierárquico e HDBSCAN
-- Exporta tabelas, métricas e gráficos para `outputs/`
-
-### Como executar
+Pipeline separada que agrupa jogadores ATP por temporada segundo o estilo de jogo (serviço, resposta, superfície, agressividade). Compara KMeans, GMM, clustering hierárquico e HDBSCAN.
 
 ```bash
 python main.py --db-path datasets/tennis_data.db --start-year 2024 --end-year 2024
 ```
 
-### Saídas geradas
+```bash
+python scripts/export_clustering_json.py   # gera os JSON do separador Clustering
+```
 
-- `outputs/player_season_clusters.csv`
-- `outputs/cluster_profiles.csv`
-- `outputs/clustering_metrics.csv`
-- `outputs/cluster_report.json`
-- `outputs/figures/`
+```bash
+streamlit run streamlit_app.py             # explorador interativo
+```
 
-### Dependências extras
+As saídas ficam em `outputs/`: `player_season_clusters.csv`, `cluster_profiles.csv`, `clustering_metrics.csv`, `cluster_report.json` e `figures/`.
 
-Para gerar visualizações completas, instale também:
+## Contribuir
 
-- seaborn
-- plotly
-- umap-learn
-- hdbscan
+1. Faça fork do projeto e crie um branch (`git checkout -b feature/nova-funcionalidade`).
+2. Corra os testes (`pytest -q`) antes de submeter.
+3. Abra um Pull Request a descrever a alteração.
 
+O código, os comentários e as colunas de dados estão em português; mantenha essa convenção.
 
+## Agradecimentos e contacto
 
+- [Jeff Sackmann / tennis_atp](https://github.com/JeffSackmann/tennis_atp) e [Tennis Abstract](https://www.tennisabstract.com/): dados históricos ATP
+- [TennisExplorer](https://www.tennisexplorer.com/): jogos e odds do dia
+- [XGBoost](https://xgboost.readthedocs.io/), [Optuna](https://optuna.org/), [scikit-learn](https://scikit-learn.org/), [Chart.js](https://www.chartjs.org/)
 
+**LinkedIn:** [luis-oliveira6](https://www.linkedin.com/in/luis-oliveira6) · **Site:** [volatustennis.me](https://volatustennis.me) · **Repositório:** [github.com/migueloliveira6/VolatusTennis](https://github.com/migueloliveira6/VolatusTennis)
 
-
-
-
+⭐ Se este projeto te foi útil, considera dar uma estrela!
