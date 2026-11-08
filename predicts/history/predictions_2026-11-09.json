@@ -1,0 +1,72 @@
+[
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Leo Borg",
+        "Jogador 2":"Toby Samuel",
+        "Vencedor Previsto":"Toby Samuel",
+        "Confiança (%)":91.5,
+        "ELO Diff":-488.1,
+        "H2H":"Igual (sem confrontos anteriores)",
+        "Odd 1":7.54,
+        "Odd 2":1.08,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    },
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Tomas Martin Etcheverry",
+        "Jogador 2":"Max Dahlin",
+        "Vencedor Previsto":"Tomas Martin Etcheverry",
+        "Confiança (%)":90.9,
+        "ELO Diff":516.0,
+        "H2H":"Igual (sem confrontos anteriores)",
+        "Odd 1":1.26,
+        "Odd 2":3.76,
+        "Superfície":"Hard",
+        "Valor Aposta":0.05,
+        "ROI Esperado (%)":14.6
+    },
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Alex Michelsen",
+        "Jogador 2":"Yannick Hanfmann",
+        "Vencedor Previsto":"Alex Michelsen",
+        "Confiança (%)":69.9,
+        "ELO Diff":97.0,
+        "H2H":"1-0 (100% para Alex Michelsen)",
+        "Odd 1":1.3,
+        "Odd 2":3.44,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    },
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"James Duckworth",
+        "Jogador 2":"Cameron Norrie",
+        "Vencedor Previsto":"Cameron Norrie",
+        "Confiança (%)":61.2,
+        "ELO Diff":-122.5,
+        "H2H":"0-1 (0% para James Duckworth)",
+        "Odd 1":2.97,
+        "Odd 2":1.39,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    },
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Tomas Machac",
+        "Jogador 2":"Borna Gojo",
+        "Vencedor Previsto":"Tomas Machac",
+        "Confiança (%)":60.1,
+        "ELO Diff":128.2,
+        "H2H":"1-1 (50% para Tomas Machac)",
+        "Odd 1":1.33,
+        "Odd 2":3.3,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    }
+]
