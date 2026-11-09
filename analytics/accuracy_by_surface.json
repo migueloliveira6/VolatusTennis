@@ -1,8 +1,8 @@
 [
   {
     "surface": "Stockholm",
-    "total_predictions": 7,
-    "correct": 7,
+    "total_predictions": 11,
+    "correct": 11,
     "accuracy": 100.0
   },
   {
@@ -217,9 +217,9 @@
   },
   {
     "surface": "Paris",
-    "total_predictions": 60,
-    "correct": 34,
-    "accuracy": 56.67
+    "total_predictions": 61,
+    "correct": 35,
+    "accuracy": 57.38
   },
   {
     "surface": "Barcelona",
