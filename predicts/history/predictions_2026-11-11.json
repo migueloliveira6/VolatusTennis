@@ -1,0 +1,72 @@
+[
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Alexander Shevchenko",
+        "Jogador 2":"Casper Ruud",
+        "Vencedor Previsto":"Casper Ruud",
+        "Confiança (%)":81.3,
+        "ELO Diff":-288.9,
+        "H2H":"0-2 (0% para Alexander Shevchenko)",
+        "Odd 1":3.86,
+        "Odd 2":1.26,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    },
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Taylor Fritz",
+        "Jogador 2":"Cameron Norrie",
+        "Vencedor Previsto":"Taylor Fritz",
+        "Confiança (%)":72.0,
+        "ELO Diff":171.7,
+        "H2H":"7-6 (54% para Taylor Fritz)",
+        "Odd 1":1.3,
+        "Odd 2":3.47,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    },
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Borna Gojo",
+        "Jogador 2":"Ugo Humbert",
+        "Vencedor Previsto":"Ugo Humbert",
+        "Confiança (%)":64.4,
+        "ELO Diff":-148.5,
+        "H2H":"Igual (sem confrontos anteriores)",
+        "Odd 1":2.78,
+        "Odd 2":1.43,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    },
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Lorenzo Sonego",
+        "Jogador 2":"Alejandro Tabilo",
+        "Vencedor Previsto":"Alejandro Tabilo",
+        "Confiança (%)":60.8,
+        "ELO Diff":-96.6,
+        "H2H":"1-1 (50% para Lorenzo Sonego)",
+        "Odd 1":1.62,
+        "Odd 2":2.25,
+        "Superfície":"Hard",
+        "Valor Aposta":0.05,
+        "ROI Esperado (%)":36.8
+    },
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Miomir Kecmanovic",
+        "Jogador 2":"Holger Rune",
+        "Vencedor Previsto":"Holger Rune",
+        "Confiança (%)":57.9,
+        "ELO Diff":-186.2,
+        "H2H":"1-3 (25% para Miomir Kecmanovic)",
+        "Odd 1":2.93,
+        "Odd 2":1.38,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    }
+]
