@@ -1,9 +1,9 @@
 [
   {
     "surface": "Stockholm",
-    "total_predictions": 15,
-    "correct": 14,
-    "accuracy": 93.33
+    "total_predictions": 20,
+    "correct": 17,
+    "accuracy": 85.0
   },
   {
     "surface": "Davis Cup",

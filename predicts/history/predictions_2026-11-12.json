@@ -1,0 +1,58 @@
+[
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Taylor Fritz",
+        "Jogador 2":"Holger Rune",
+        "Vencedor Previsto":"Taylor Fritz",
+        "Confiança (%)":67.4,
+        "ELO Diff":81.1,
+        "H2H":"2-1 (67% para Taylor Fritz)",
+        "Odd 1":1.42,
+        "Odd 2":2.8,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    },
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Lorenzo Musetti",
+        "Jogador 2":"Ugo Humbert",
+        "Vencedor Previsto":"Lorenzo Musetti",
+        "Confiança (%)":61.0,
+        "ELO Diff":140.3,
+        "H2H":"Igual (sem confrontos anteriores)",
+        "Odd 1":1.47,
+        "Odd 2":2.63,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    },
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Alex Michelsen",
+        "Jogador 2":"Alejandro Tabilo",
+        "Vencedor Previsto":"Alex Michelsen",
+        "Confiança (%)":60.5,
+        "ELO Diff":51.1,
+        "H2H":"1-0 (100% para Alex Michelsen)",
+        "Odd 1":1.26,
+        "Odd 2":3.76,
+        "Superfície":"Hard",
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    },
+    {
+        "Torneio":"Stockholm",
+        "Jogador 1":"Thiago Agustin Tirante",
+        "Jogador 2":"Alexander Shevchenko",
+        "Vencedor Previsto":"Thiago Agustin Tirante",
+        "Confiança (%)":60.3,
+        "ELO Diff":101.8,
+        "H2H":"1-0 (100% para Thiago Agustin Tirante)",
+        "Odd 1":2.15,
+        "Odd 2":1.68,
+        "Superfície":"Hard",
+        "Valor Aposta":0.05,
+        "ROI Esperado (%)":29.6
+    }
+]
