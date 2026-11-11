@@ -66,7 +66,15 @@ Probabilities are calibrated (Platt or isotonic, chosen on a temporal calibratio
 
 **Evaluation loop**: `compare_predictions_results.py` matches predictions to actual results by normalized player names and writes `previsoes/comparacao_previsoes_YYYY-MM-DD.csv`. Columns: `Matched`, `Correct`, odds, `Superfície`, stake and bet profit. `generate_analytics.py` merges it into the cumulative `docs/analytics/*.json`. `analytics_state.json` records which comparisons were already counted, so it doesn't double-count. It also appends one row per evaluated prediction to `docs/analytics/track_record.json` (via `src/track_record.py`, idempotent per date+players). That file feeds the "Histórico" tab: filters, KPIs, bankroll curve from the suggested stakes, calibration chart and a paginated table. Like the other analytics JSONs, its live copy is persisted on `gh-pages`.
 
-**Frontend**: `docs/index.html` is a single static page (Chart.js) that fetches `predicts/*.json`, `analytics/*.json` and `data/*.json` (the last from `src/extract_features_v3.py`, `src/DR_top10.py`). Changing a JSON shape means updating the matching `getJSON(...)` consumer in `index.html`. Shared helpers in the page:
+**Frontend**: `docs/index.html` is a single static page (Chart.js) whose styles are in `docs/css/styles.css` and logic in `docs/js/app.js`. It fetches `predicts/*.json`, `analytics/*.json` and `data/*.json` (the last from `src/extract_features_v3.py`, `src/DR_top10.py`). Changing a JSON shape means updating the matching `getJSON(...)` consumer in `app.js`.
+
+The site is an installable PWA (no push notifications; daily alerts go through the Telegram channel, `TELEGRAM_INVITE_URL` in `app.js`).
+- `docs/sw.js` caches the shell cache-first and fetches `*.json` network-first, so predictions are never served stale when online.
+- **When changing `styles.css` or `app.js`, bump the `?v=` query in `index.html` and in `SHELL` in `sw.js`, and bump `VERSION` in `sw.js`.** The page then shows a "Há uma versão nova" toast.
+- Tabs are deep-linkable (`#previsoes`, `#historico`, …), which the manifest shortcuts use.
+- Service workers don't run in the app's built-in browser pane: test the PWA with Playwright on the system Chrome (`channel="chrome"`).
+
+Shared helpers in `app.js`:
 - `getJSON(url)` checks `response.ok`.
 - `setTabStatus(panelId, 'loading'|'error'|'ok', msg, retry)` drives the per-tab loading/error box.
 - `setupTabList(tabs, onSelect)` implements WAI-ARIA tabs for the nav and surface tabs.

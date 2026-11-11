@@ -46,6 +46,15 @@ O **VolatusTennis** prevê o vencedor dos jogos ATP do dia seguinte e publica as
 
 O site é uma página única (`docs/index.html`) em HTML, CSS e JavaScript com [Chart.js](https://www.chartjs.org/). Funciona em telemóvel e com teclado e leitores de ecrã (separadores e pesquisa com WAI-ARIA).
 
+### Instalar no telemóvel
+
+O site instala-se como uma app (PWA), com ícone no ecrã principal, ecrã inteiro e funcionamento offline com os últimos dados guardados:
+
+- **Android:** abrir o site no Chrome e tocar em **Instalar app** (no site ou no menu do Chrome).
+- **iPhone:** abrir o site no Safari, tocar em **Partilhar** e escolher **Adicionar ao ecrã principal**. O botão **Instalar app** do site mostra estes passos.
+
+Os avisos diários das previsões chegam pelo canal do Telegram (botão **Telegram** no site).
+
 ## Arquitetura
 
 ```
@@ -329,6 +338,8 @@ VolatusTennis/
 │   └── predictions.yml         # pipeline diária
 ├── docs/                       # site (GitHub Pages)
 │   ├── index.html
+│   ├── css/ · js/              # estilos e lógica do site
+│   ├── sw.js                   # service worker (app instalável e offline)
 │   ├── img/                    # logo, ícones, imagem de partilha
 │   ├── predicts/               # previsões do dia + snapshots
 │   ├── analytics/              # estatísticas, histórico, clustering
