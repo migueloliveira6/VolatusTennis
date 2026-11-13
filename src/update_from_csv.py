@@ -31,8 +31,8 @@ from elo_calculator import INITIAL_ELO, level_k_multiplier, update_elo_dynamic
 from match_policy import classify_result, elo_k_multiplier, is_training_target, sort_matches
 from recompute_elo import LEVEL_FIXES, TOURNAMENT_TYPE_FIXES
 
-DB_PATH = os.getenv('DB_PATH', os.path.join(os.path.dirname(__file__), '..', 'datasets', 'tennis_data_2026_v3.db'))
-CSV_PATH = os.getenv('CSV_PATH', os.path.join(os.path.dirname(__file__), '..', 'datasets', 'dataset_2026_normalizado_v5.csv'))
+DB_PATH = os.getenv('DB_PATH', os.path.join(os.path.dirname(__file__), '..', 'datasets', 'tennis_data_2026_v4.db'))
+CSV_PATH = os.getenv('CSV_PATH', os.path.join(os.path.dirname(__file__), '..', 'datasets', 'dataset_2026_normalizado_v6.csv'))
 
 # Colunas copiadas do CSV tal como vêm (se existirem no CSV e na tabela)
 CSV_COLUMNS = [

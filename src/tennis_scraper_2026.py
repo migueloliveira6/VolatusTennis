@@ -146,11 +146,12 @@ class TennisAbstractScraper:
 
         # Dicionário com torneios, datas e superfícies
         tournament_calendar = {
-            "Basel": ("20261026", "Hard"),
-            "Vienna": ("20261026", "Hard"),
-            "Lyon": ("20261019", "Hard"),
-            "Brussels": ("20261019", "Hard"),
-            "Almaty": ("20261019", "Hard"),
+            "Paris": ("20261102", "Hard"),
+            #"Basel": ("20261026", "Hard"),
+            #"Vienna": ("20261026", "Hard"),
+            #"Lyon": ("20261019", "Hard"),
+            #"Brussels": ("20261019", "Hard"),
+            #"Almaty": ("20261019", "Hard"),
             #"Shanghai-Masters": ("20261007", "Hard"),
             #"Beijing": ("20260930", "Hard"),
             #"Tokyo": ("20260930", "Hard"),
@@ -221,7 +222,7 @@ class TennisAbstractScraper:
 
         if any(keyword in tourney_name_lower for keyword in grand_slam_keywords):
             tourney_level = "W"
-        elif "masters" in tourney_name_lower:
+        elif "masters" and "paris" in tourney_name_lower:
             tourney_level = "M"
         else:
             tourney_level = "A"
