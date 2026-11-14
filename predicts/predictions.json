@@ -1,16 +1,30 @@
 [
     {
-        "Torneio":"Stockholm",
-        "Jogador 1":"Taylor Fritz",
-        "Jogador 2":"Thiago Agustin Tirante",
-        "Vencedor Previsto":"Taylor Fritz",
-        "Confiança (%)":71.6,
-        "ELO Diff":213.3,
-        "H2H":"Igual (sem confrontos anteriores)",
-        "Odd 1":1.16,
-        "Odd 2":5.16,
+        "Torneio":"Masters Cup ATP",
+        "Jogador 1":"Alexander Zverev",
+        "Jogador 2":"Rafael Jodar",
+        "Vencedor Previsto":"Alexander Zverev",
+        "Confiança (%)":56.7,
+        "ELO Diff":128.8,
+        "H2H":"1-0 (100% para Alexander Zverev)",
+        "Odd 1":1.41,
+        "Odd 2":2.88,
         "Superfície":"Hard",
-        "Valor Aposta":0,
-        "ROI Esperado (%)":0
+        "Valor Aposta":0.0,
+        "ROI Esperado (%)":0.0
+    },
+    {
+        "Torneio":"Masters Cup ATP",
+        "Jogador 1":"Ben Shelton",
+        "Jogador 2":"Arthur Fils",
+        "Vencedor Previsto":"Arthur Fils",
+        "Confiança (%)":50.7,
+        "ELO Diff":-15.1,
+        "H2H":"1-1 (50% para Ben Shelton)",
+        "Odd 1":1.55,
+        "Odd 2":2.46,
+        "Superfície":"Hard",
+        "Valor Aposta":0.042,
+        "ROI Esperado (%)":24.7
     }
 ]
