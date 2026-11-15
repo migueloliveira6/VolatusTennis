@@ -18,6 +18,9 @@ from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 import re
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from name_lookup import apply_name_lookup
+
 # Configuração de logging
 logging.basicConfig(
     level=logging.INFO,
@@ -85,18 +88,10 @@ def getPlayersFullName(playerUrl: str) -> str:
             name = first_name + " " + last_name
         
         name = name.strip().replace("-", " ")
-        
-        # Aplicar substituições personalizadas se existir
-        try:
-            if os.path.exists(NAME_LOOKUP):
-                name_dict = pd.read_csv(NAME_LOOKUP)
-            for _, item in name_dict.iterrows():
-                name = name.replace(item.old, item.new)
-        except FileNotFoundError:
-            pass
-        except Exception as e:
-            logger.info(f"Erro ao aplicar substituições de nome: {e}")
-        
+
+        # Correções de nomes (name_lookup.csv), iguais às aplicadas aos resultados
+        name = apply_name_lookup(name, NAME_LOOKUP)
+
         nome_cache[playerUrl] = name
         return name
         
