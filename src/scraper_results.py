@@ -17,6 +17,11 @@ import pandas as pd
 import logging
 import re
 
+try:
+    from name_lookup import apply_name_lookup
+except ImportError:
+    from src.name_lookup import apply_name_lookup
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
@@ -66,6 +71,8 @@ def getPlayersFullName(playerUrl: str) -> str:
             name = first_name + " " + last_name
 
         name = name.strip().replace("-", " ")
+        # Mesmas correções de nomes que o engine.py aplica às previsões
+        name = apply_name_lookup(name)
         nome_cache[playerUrl] = name
         return name
 
