@@ -1,30 +1,30 @@
 [
     {
         "Torneio":"Masters Cup ATP",
-        "Jogador 1":"Alexander Zverev",
-        "Jogador 2":"Rafael Jodar",
-        "Vencedor Previsto":"Alexander Zverev",
-        "Confiança (%)":56.7,
-        "ELO Diff":128.8,
-        "H2H":"1-0 (100% para Alexander Zverev)",
-        "Odd 1":1.41,
-        "Odd 2":2.88,
+        "Jogador 1":"Carlos Alcaraz",
+        "Jogador 2":"Frances Tiafoe",
+        "Vencedor Previsto":"Carlos Alcaraz",
+        "Confiança (%)":88.3,
+        "ELO Diff":359.0,
+        "H2H":"2-1 (67% para Carlos Alcaraz)",
+        "Odd 1":1.1,
+        "Odd 2":6.95,
         "Superfície":"Hard",
-        "Valor Aposta":0.0,
-        "ROI Esperado (%)":0.0
+        "Valor Aposta":0,
+        "ROI Esperado (%)":0
     },
     {
         "Torneio":"Masters Cup ATP",
-        "Jogador 1":"Ben Shelton",
-        "Jogador 2":"Arthur Fils",
-        "Vencedor Previsto":"Arthur Fils",
-        "Confiança (%)":50.7,
-        "ELO Diff":-15.1,
-        "H2H":"1-1 (50% para Ben Shelton)",
-        "Odd 1":1.55,
-        "Odd 2":2.46,
+        "Jogador 1":"Daniil Medvedev",
+        "Jogador 2":"Flavio Cobolli",
+        "Vencedor Previsto":"Daniil Medvedev",
+        "Confiança (%)":68.1,
+        "ELO Diff":106.6,
+        "H2H":"2-1 (67% para Daniil Medvedev)",
+        "Odd 1":1.28,
+        "Odd 2":3.7,
         "Superfície":"Hard",
-        "Valor Aposta":0.042,
-        "ROI Esperado (%)":24.7
+        "Valor Aposta":0,
+        "ROI Esperado (%)":0
     }
 ]
