@@ -1,0 +1,30 @@
+[
+    {
+        "Torneio":"Masters Cup ATP",
+        "Jogador 1":"Alexander Zverev",
+        "Jogador 2":"Ben Shelton",
+        "Vencedor Previsto":"Alexander Zverev",
+        "Confiança (%)":59.3,
+        "ELO Diff":106.0,
+        "H2H":"6-0 (100% para Alexander Zverev)",
+        "Odd 1":1.5,
+        "Odd 2":2.58,
+        "Superfície":"Hard",
+        "Valor Aposta":0,
+        "ROI Esperado (%)":0
+    },
+    {
+        "Torneio":"Masters Cup ATP",
+        "Jogador 1":"Arthur Fils",
+        "Jogador 2":"Rafael Jodar",
+        "Vencedor Previsto":"Rafael Jodar",
+        "Confiança (%)":53.3,
+        "ELO Diff":37.9,
+        "H2H":"1-1 (50% para Arthur Fils)",
+        "Odd 1":1.92,
+        "Odd 2":1.88,
+        "Superfície":"Hard",
+        "Valor Aposta":0,
+        "ROI Esperado (%)":0
+    }
+]
