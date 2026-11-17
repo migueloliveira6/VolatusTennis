@@ -1,0 +1,30 @@
+[
+    {
+        "Torneio":"Masters Cup ATP",
+        "Jogador 1":"Carlos Alcaraz",
+        "Jogador 2":"Daniil Medvedev",
+        "Vencedor Previsto":"Carlos Alcaraz",
+        "Confiança (%)":79.6,
+        "ELO Diff":293.2,
+        "H2H":"7-3 (70% para Carlos Alcaraz)",
+        "Odd 1":1.24,
+        "Odd 2":4.03,
+        "Superfície":"Hard",
+        "Valor Aposta":0,
+        "ROI Esperado (%)":0
+    },
+    {
+        "Torneio":"Masters Cup ATP",
+        "Jogador 1":"Flavio Cobolli",
+        "Jogador 2":"Frances Tiafoe",
+        "Vencedor Previsto":"Frances Tiafoe",
+        "Confiança (%)":52.2,
+        "ELO Diff":-40.8,
+        "H2H":"1-4 (20% para Flavio Cobolli)",
+        "Odd 1":2.1,
+        "Odd 2":1.73,
+        "Superfície":"Hard",
+        "Valor Aposta":0,
+        "ROI Esperado (%)":0
+    }
+]
