@@ -1,8 +1,8 @@
 {
-  "total_predictions": 2249,
-  "correct": 1450,
-  "wrong": 799,
-  "accuracy": 64.47,
+  "total_predictions": 2251,
+  "correct": 1451,
+  "wrong": 800,
+  "accuracy": 64.46,
   "bet_bets": 695,
   "bet_wins": 408,
   "bet_losses": 287,
@@ -11,8 +11,8 @@
   "bet_profit_total": 2.083,
   "bet_accuracy": 58.71,
   "bet_roi": 1.37,
-  "comparison_file": "comparacao_previsoes_2026-11-16.csv",
-  "comparison_date": "2026-11-16",
-  "runs_processed": 221,
-  "last_updated": "2026-11-17 22:54:28"
+  "comparison_file": "comparacao_previsoes_2026-11-17.csv",
+  "comparison_date": "2026-11-17",
+  "runs_processed": 222,
+  "last_updated": "2026-11-18 22:54:43"
 }
