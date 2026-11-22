@@ -10,7 +10,7 @@ import logging
 import requests
 import subprocess
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -112,7 +112,8 @@ class Jogo:
     player2: str
     odd1: Optional[float]
     odd2: Optional[float]
-    
+    iniciado: bool = False  # já tem resultado ou parciais (ao vivo ou terminado)
+
     def __str__(self):
         odds_info = f" (Odds: {self.odd1} vs {self.odd2})" if self.odd1 and self.odd2 else ""
         return f"🎾 {self.player1} vs {self.player2}{odds_info}"
@@ -254,21 +255,33 @@ class NeuroTennis:
             odd1, odd2 = self._extrair_odds(linha1)
             jogador1 = getPlayersFullName(href1)
             jogador2 = getPlayersFullName(href2)
-            
+
             return Jogo(
                 player1=jogador1,
                 player2=jogador2,
                 odd1=odd1,
-                odd2=odd2
+                odd2=odd2,
+                iniciado=self._jogo_iniciado(linha1, linha2)
             )
         except Exception as e:
             logger.warning(f"Erro ao processar par de jogadores: {e}")
             return None
     
-    def _construir_url(self, dias_offset: int = 1) -> str:
-        """Constrói a URL para scraping"""
-        hoje = datetime.today()
-        data_target = hoje + timedelta(days=dias_offset)
+    @staticmethod
+    def _jogo_iniciado(linha1, linha2) -> bool:
+        """True se o jogo já começou: resultado ou parciais preenchidos em alguma das linhas.
+
+        Jogos por começar têm as células 'result'/'score' vazias (ou a coluna 'nbr').
+        """
+        for linha in (linha1, linha2):
+            for td in linha.find_all("td", class_=["result", "score"]):
+                if td.get_text(strip=True).replace("\xa0", ""):
+                    return True
+        return False
+
+    def _construir_url(self, dias_offset: int = 1, data_alvo: Optional[date] = None) -> str:
+        """Constrói a URL para scraping (data explícita ou hoje + dias_offset)"""
+        data_target = data_alvo or (datetime.today() + timedelta(days=dias_offset))
         return (f"https://www.tennisexplorer.com/matches/"
                 f"?type=atp-single&year={data_target.year}"
                 f"&month={data_target.month:02d}"
@@ -289,9 +302,10 @@ class NeuroTennis:
             logger.debug(f"Erro ao extrair nome do torneio: {e}")
             return None
     
-    def extrair_jogos_agrupados_por_torneio(self, dias_offset: int = 1) -> Dict[str, List[Jogo]]:
-        """Extrai jogos agrupados por torneio"""
-        url = self._construir_url(dias_offset)
+    def extrair_jogos_agrupados_por_torneio(self, dias_offset: int = 1,
+                                            data_alvo: Optional[date] = None) -> Dict[str, List[Jogo]]:
+        """Extrai jogos agrupados por torneio (de hoje + dias_offset, ou de data_alvo)"""
+        url = self._construir_url(dias_offset, data_alvo)
         logger.info(f"📅 URL sendo acessada: {url}")
         
         try:

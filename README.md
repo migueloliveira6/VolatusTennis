@@ -293,6 +293,12 @@ O workflow `.github/workflows/predictions.yml` corre todos os dias. É disparado
 4. Gera `docs/predicts/predictions.json` e atualiza as estatísticas e o `track_record.json`.
 5. Guarda o snapshot do dia e publica `docs/` no `gh-pages`, que serve [volatustennis.me](https://volatustennis.me).
 
+Cerca de 6h depois (~04:50 UTC) corre um segundo workflow, `.github/workflows/check_new_matches.yml`, disparado pelo cron-job.org com o `event_type` `check-new-matches`. Alguns jogos do dia só aparecem no TennisExplorer depois do run principal (a ronda anterior acaba tarde). Este workflow procura jogos com odds, ainda por começar, que não estejam no site, prevê só esses e acrescenta-os às previsões e ao snapshot do dia. Envia ainda uma mensagem no Telegram só com os jogos novos. Para testar localmente sem escrever nem enviar nada:
+
+```bash
+python src/check_new_matches.py --site-dir <pasta com o gh-pages> --dry-run
+```
+
 O estado do site vive no `gh-pages`. Os JSON de `docs/analytics` e `docs/predicts` no `main` não são a fonte de verdade.
 
 ## Formatos de dados
