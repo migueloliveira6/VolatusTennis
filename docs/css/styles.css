@@ -1383,33 +1383,68 @@ select {
 }
 
 /* ==================== SPLASH (abertura da app) ==================== */
-/* Logo centrado e parado sobre o fundo, igual ao splash nativo da PWA instalada
-   (manifest: background_color + ícone). Desaparece em fade quando a página está pronta. */
+/* Como o X: o logo fica parado no centro enquanto a app carrega; depois encolhe um pouco
+   e "explode" para lá do ecrã enquanto o fundo desaparece e revela a página.
+   Mesmo fundo do splash nativo da PWA instalada (manifest: background_color). */
 .splash {
     position: fixed;
     inset: 0;
     z-index: 9999;
     display: grid;
     place-items: center;
-    background: var(--bg);
-    transition: opacity 0.4s ease, visibility 0.4s ease;
-}
-
-.splash.is-hidden {
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
+    overflow: hidden;
+    background-color: var(--bg);
 }
 
 .splash-logo {
-    width: 96px;
-    height: 96px;
-    border-radius: 22px;
+    width: 104px;
+    height: 104px;
+    will-change: transform, opacity;
+}
+
+/* 0–45%: encolhe para 80%; 45–100%: cresce até sair do ecrã e desaparece */
+.splash.is-leaving {
+    pointer-events: none;
+    animation: splashBackground 0.6s ease-in forwards;
+}
+
+.splash.is-leaving .splash-logo {
+    animation: splashLogo 0.6s forwards;
+}
+
+@keyframes splashLogo {
+    0% {
+        transform: scale(1);
+        animation-timing-function: cubic-bezier(0.45, 0, 0.55, 1);
+    }
+    45% {
+        transform: scale(0.8);
+        opacity: 1;
+        animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+    }
+    85% {
+        opacity: 1;
+    }
+    100% {
+        transform: scale(24);
+        opacity: 0;
+    }
+}
+
+@keyframes splashBackground {
+    0%, 50% {
+        background-color: var(--bg);
+    }
+    100% {
+        background-color: transparent;
+        visibility: hidden;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .splash {
-        transition: none;
+    .splash.is-leaving,
+    .splash.is-leaving .splash-logo {
+        animation: none;
     }
 }
 

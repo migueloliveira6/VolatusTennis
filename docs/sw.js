@@ -22,6 +22,7 @@ const SHELL = [
     'favicon.ico',
     'site.webmanifest',
     'img/logo-192.webp',
+    'img/logo-mark.webp',
     'img/favicon-32.png',
     'img/apple-touch-icon.png',
     'img/icon-192.png',
