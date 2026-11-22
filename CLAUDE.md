@@ -74,6 +74,8 @@ The site is an installable PWA (no push notifications; daily alerts go through t
 - Tabs are deep-linkable (`#previsoes`, `#historico`, …), which the manifest shortcuts use.
 - Service workers don't run in the app's built-in browser pane: test the PWA with Playwright on the system Chrome (`channel="chrome"`).
 
+Visual identity: dark theme with purple accent (`#a78bfa`); Sakana is the UI font, while player names, the history table and long notes use the system font (`--font-read`) so they stay readable. Colours live in `:root` in `styles.css` and are mirrored in `THEME` at the top of `app.js` (Chart.js defaults and series colours), so change both together. Below 860px the nav tabs become a fixed bottom bar; `.app-header` must not get `backdrop-filter` there, or it becomes the containing block of the fixed bar.
+
 Shared helpers in `app.js`:
 - `getJSON(url)` checks `response.ok`.
 - `setTabStatus(panelId, 'loading'|'error'|'ok', msg, retry)` drives the per-tab loading/error box.

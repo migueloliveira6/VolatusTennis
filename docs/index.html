@@ -47,173 +47,169 @@
         "inLanguage": "pt-PT"
     }
     </script>
-    <link rel="stylesheet" href="css/styles.css?v=1">
+    <link rel="stylesheet" href="css/styles.css?v=3">
 </head>
 <body>
     <div class="loading-screen" id="loadingScreen" role="status" aria-live="polite">
         <div class="loading-content">
             <div class="loading-brand">
-                <img class="loading-logo" src="img/logo-192.webp" width="64" height="64" alt="" aria-hidden="true">
+                <img class="loading-logo" src="img/logo-192.webp" width="56" height="56" alt="" aria-hidden="true">
                 <h1>VOLATUS<span>TENNIS</span></h1>
             </div>
             <div class="loading-court" aria-hidden="true">
-                <div class="loading-ball"></div>
+                <div class="ball loading-ball"></div>
                 <div class="loading-shadow"></div>
             </div>
-            <p class="loading-status" id="loadingStatus">A carregar previsões</p>
+            <p class="loading-status" id="loadingStatus">A carregar previsões…</p>
         </div>
     </div>
 
-    <div class="container">
-        <!-- NAVBAR -->
-        <nav class="navbar">
-            <div class="nav-brand">
+    <header class="app-header">
+        <div class="app-header-in">
+            <a class="brand" href="#previsoes" aria-label="VolatusTennis: previsões de hoje">
+                <img src="img/logo-192.webp" width="30" height="30" alt="">
                 <span class="nav-logo">VOLATUS<span>TENNIS</span></span>
-                <div class="app-actions">
-                    <button type="button" id="installBtn" class="app-action" hidden>
-                        <span aria-hidden="true">📲</span> Instalar app
-                    </button>
-                    <button type="button" id="iosInstallBtn" class="app-action" hidden aria-haspopup="dialog">
-                        <span aria-hidden="true">📲</span> Instalar app
-                    </button>
-                    <a id="telegramBtn" class="app-action app-action-telegram" hidden target="_blank" rel="noopener">
-                        <span aria-hidden="true">🔔</span> Telegram
-                    </a>
-                </div>
-            </div>
+            </a>
             <div class="nav-tabs" role="tablist" aria-label="Secções do site">
                 <button class="nav-tab active" data-tab="previsoes" role="tab" id="tabbtn-previsoes"
                         aria-selected="true" aria-controls="tab-previsoes">
-                    Previsões
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M5.2 6.2c3 2.6 3 9 0 11.6M18.8 6.2c-3 2.6-3 9 0 11.6"/></svg>
+                    <span>Previsões</span>
                 </button>
                 <button class="nav-tab" data-tab="estatisticas" role="tab" id="tabbtn-estatisticas"
                         aria-selected="false" aria-controls="tab-estatisticas" tabindex="-1">
-                    Estatísticas
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M21 20H3"/></svg>
+                    <span>Estatísticas</span>
                 </button>
                 <button class="nav-tab" data-tab="historico" role="tab" id="tabbtn-historico"
                         aria-selected="false" aria-controls="tab-historico" tabindex="-1">
-                    Histórico
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                    <span>Histórico</span>
                 </button>
                 <button class="nav-tab" data-tab="clustering" role="tab" id="tabbtn-clustering"
                         aria-selected="false" aria-controls="tab-clustering" tabindex="-1">
-                    Clustering
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="16" r="2.5"/><circle cx="16" cy="8" r="2.5"/><circle cx="17.5" cy="17" r="1.5"/><circle cx="8" cy="7" r="1.5"/></svg>
+                    <span>Estilos</span>
                 </button>
-                <!-- Futuro: ELO & Rankings -->
-                <!-- <button class="nav-tab" data-tab="elo">ELO & Rankings</button> -->
             </div>
-        </nav>
-        <main id="conteudo">
-        <div id="tab-previsoes" class="tab-content active" role="tabpanel" aria-labelledby="tabbtn-previsoes" tabindex="0">
-            <header>
-                <h1>Previsões de hoje</h1>
-                <p class="subtitle">Um modelo criado para previsões de Ténis com Machine Learning</p>
-            </header>
-
-            <div class="stats-grid" id="stats">
-                <div class="stat-card">
-                    <div class="stat-value" id="totalMatches">-</div>
-                    <div class="stat-label">Jogos hoje</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="avgConfidence">-</div>
-                    <div class="stat-label">Confiança Média</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="tournaments">-</div>
-                    <div class="stat-label">Torneios</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="avgRoi">-</div>
-                    <div class="stat-label">ROI Médio</div>
-                </div>
+            <div class="app-actions">
+                <a id="telegramBtn" class="app-action app-action-telegram" hidden target="_blank" rel="noopener">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 4 3 11l6 2.5 2 6 3-4 4 3 3-14.5Z"/><path d="m9 13.5 8-6"/></svg> Telegram
+                </a>
+                <button type="button" id="installBtn" class="app-action app-action-primary" hidden>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg> Instalar
+                </button>
+                <button type="button" id="iosInstallBtn" class="app-action app-action-primary" hidden aria-haspopup="dialog">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14"/></svg> Instalar
+                </button>
             </div>
-
-            <div class="predictions-container">
-                <div class="chip-row" id="tournamentChips" role="group" aria-label="Filtrar jogos"></div>
-                <div id="predictions" class="loading" aria-live="polite" aria-busy="true">
-                    A carregar previsões...
-                </div>
-            </div>
-            <p class="mx-foot">Informação estatística, não é aconselhamento de apostas.</p>
         </div>
-         <!-- TAB: ESTATÍSTICAS (nova) -->
-        <div id="tab-estatisticas" class="tab-content" role="tabpanel" aria-labelledby="tabbtn-estatisticas" tabindex="0" hidden>
-            <header class="stats-header">
-                <h2>Estatísticas de Acertos</h2>
-                <p class="subtitle">Performance das previsões ao longo do tempo</p>
-            </header>
+    </header>
 
-            <!-- KPIs -->
-            <div class="stats-grid">
+    <div class="container">
+        <main id="conteudo">
+        <!-- TAB: PREVISÕES -->
+        <div id="tab-previsoes" class="tab-content active" role="tabpanel" aria-labelledby="tabbtn-previsoes" tabindex="0">
+            <div class="page-head">
+                <h1>Previsões de hoje</h1>
+                <p class="subtitle">Quem o modelo acha que ganha, e onde as odds compensam.</p>
+            </div>
+
+            <div class="stats-grid" id="stats" aria-busy="true">
                 <div class="stat-card">
-                    <div class="stat-label">Taxa de Acerto</div>
+                    <div class="stat-label">Jogos</div>
+                    <div id="totalMatches" class="stat-value">--</div>
+                </div>
+                <div class="stat-card is-accent">
+                    <div class="stat-label">Com valor</div>
+                    <div id="valueCount" class="stat-value">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Confiança média</div>
+                    <div id="avgConfidence" class="stat-value">--</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">ROI médio esperado</div>
+                    <div id="avgRoi" class="stat-value">--</div>
+                </div>
+            </div>
+
+            <div class="toolbar" id="predToolbar" hidden>
+                <div class="chip-row" id="tournamentChips" role="group" aria-label="Filtrar jogos"></div>
+                <label class="sort">Ordenar
+                    <select id="sortSelect">
+                        <option value="tourney">Por torneio</option>
+                        <option value="conf">Maior confiança</option>
+                        <option value="value">Maior valor</option>
+                    </select>
+                </label>
+            </div>
+
+            <div id="predictions" class="loading" aria-live="polite" aria-busy="true">
+                A carregar previsões…
+            </div>
+            <p class="mx-foot">Informação estatística, não é aconselhamento de apostas. O stake sugerido é uma fração da banca (Kelly fracionado).</p>
+        </div>
+
+        <!-- TAB: ESTATÍSTICAS -->
+        <div id="tab-estatisticas" class="tab-content" role="tabpanel" aria-labelledby="tabbtn-estatisticas" tabindex="0" hidden>
+            <div class="page-head">
+                <h2>Estatísticas</h2>
+                <p class="subtitle">Como o modelo se tem portado ao longo do tempo.</p>
+            </div>
+
+            <div class="hero-acc">
+                <div>
+                    <div class="stat-label">Taxa de acerto</div>
                     <div id="kpi-accuracy" class="stat-value">--%</div>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Total de Previsões</div>
-                    <div id="kpi-total-preds" class="stat-value">--</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Acertos</div>
-                    <div id="kpi-correct" class="stat-value stat-positive">--</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Erros</div>
-                    <div id="kpi-wrong" class="stat-value stat-negative">--</div>
+                <div>
+                    <div class="progress-bar" role="img" aria-label="Proporção de previsões certas e erradas">
+                        <div id="accuracy-progress-bar" class="progress-fill"></div>
+                    </div>
+                    <div class="hero-legend">
+                        <span><i class="dot" style="background:var(--pos)"></i><b id="kpi-correct">--</b> certas</span>
+                        <span><i class="dot" style="background:var(--neg)"></i><b id="kpi-wrong">--</b> erradas</span>
+                        <span><b id="kpi-total-preds">--</b> previsões avaliadas</span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Progress Bar -->
-            <div class="accuracy-progress-card">
-                <div class="progress-header">
-                    <span>Taxa de Acerto Global</span>
-                    <span id="accuracy-progress-label">--%</span>
-                </div>
-                <div class="progress-bar">
-                    <div id="accuracy-progress-bar" class="progress-fill"></div>
-                </div>
-            </div>
-
-            <!-- Gráficos -->
             <div class="charts-section">
                 <div class="chart-card">
                     <h3>Evolução da taxa de acerto</h3>
-                    <canvas role="img" aria-label="Gráfico de linha: taxa de acerto do modelo por mês" id="accuracyTrendChart" height="80"></canvas>
+                    <div class="chart-box"><canvas id="accuracyTrendChart" role="img" aria-label="Gráfico de linha: taxa de acerto do modelo por mês"></canvas></div>
                 </div>
-                
                 <div class="chart-card">
                     <h3>Acerto por faixa de confiança</h3>
-                    <canvas role="img" aria-label="Gráfico de barras: taxa de acerto por faixa de confiança da previsão" id="confidenceChart" height="80"></canvas>
+                    <div class="chart-box"><canvas id="confidenceChart" role="img" aria-label="Gráfico de barras: taxa de acerto por faixa de confiança da previsão"></canvas></div>
                 </div>
             </div>
 
-            <!-- Top 10 por Superfície -->
             <div class="section">
-                <h2>Top 10 jogadores por superfície</h2>
-                
+                <h2>Top 10 por superfície</h2>
                 <div class="surface-tabs" role="tablist" aria-label="Superfície">
                     <button class="surface-tab active" data-surface="hard" role="tab" aria-selected="true" aria-controls="top10-container">Hard</button>
                     <button class="surface-tab" data-surface="clay" role="tab" aria-selected="false" aria-controls="top10-container" tabindex="-1">Clay</button>
                     <button class="surface-tab" data-surface="grass" role="tab" aria-selected="false" aria-controls="top10-container" tabindex="-1">Grass</button>
                 </div>
-
                 <div id="top10-container" class="top10-grid" role="tabpanel" aria-live="polite"></div>
             </div>
 
-            <!-- Tendências de ELO -->
             <div class="section">
-                <h2>Evolução do ELO dos 5 melhores jogadores</h2>
+                <h2>Evolução do ELO dos 5 melhores</h2>
                 <div class="chart-card">
-                    <canvas role="img" aria-label="Gráfico de linha: evolução do ELO dos 5 melhores jogadores" id="eloTrendsChart" height="150"></canvas>
+                    <div class="chart-box tall"><canvas id="eloTrendsChart" role="img" aria-label="Gráfico de linha: evolução do ELO dos 5 melhores jogadores"></canvas></div>
                 </div>
             </div>
         </div>
 
+        <!-- TAB: HISTÓRICO -->
         <div id="tab-historico" class="tab-content" role="tabpanel" aria-labelledby="tabbtn-historico" tabindex="0" hidden>
-            <header class="stats-header">
-                <h2>Histórico de previsões</h2>
-                <p class="subtitle">Cada previsão comparada com o resultado real e o resultado das apostas sugeridas</p>
-            </header>
+            <div class="page-head">
+                <h2>Histórico</h2>
+                <p class="subtitle">Cada previsão comparada com o resultado real, e o que renderam as apostas sugeridas.</p>
+            </div>
 
             <div class="tr-filters" role="group" aria-label="Filtros do histórico">
                 <label>Período
@@ -275,19 +271,19 @@
             <div class="charts-section">
                 <div class="chart-card">
                     <h3>Banca acumulada</h3>
-                    <canvas id="trBankrollChart" role="img" aria-label="Gráfico de linha: lucro acumulado das apostas sugeridas, em percentagem da banca"></canvas>
+                    <div class="chart-box"><canvas id="trBankrollChart" role="img" aria-label="Gráfico de linha: lucro acumulado das apostas sugeridas, em percentagem da banca"></canvas></div>
                     <p id="tr-bankroll-empty" class="tr-empty" hidden>Ainda não há apostas com stake registadas neste filtro. O lucro passa a ser registado a partir das comparações diárias novas.</p>
                 </div>
                 <div class="chart-card">
                     <h3>Calibração: confiança vs. acerto real</h3>
-                    <canvas id="trCalibrationChart" role="img" aria-label="Gráfico de barras: confiança média prevista e taxa de acerto real por faixa de confiança"></canvas>
+                    <div class="chart-box"><canvas id="trCalibrationChart" role="img" aria-label="Gráfico de barras: confiança média prevista e taxa de acerto real por faixa de confiança"></canvas></div>
                 </div>
             </div>
 
             <div class="section">
                 <h2>Jogo a jogo</h2>
                 <p id="tr-count" class="tr-count" aria-live="polite"></p>
-                <div class="tr-table-wrap" role="region" aria-label="Tabela do histórico (desliza na horizontal)" tabindex="0">
+                <div class="tr-table-wrap">
                     <table class="tr-table">
                         <caption class="sr-only">Previsões avaliadas, da mais recente para a mais antiga</caption>
                         <thead>
@@ -297,9 +293,9 @@
                                 <th scope="col">Jogo</th>
                                 <th scope="col">Previsão</th>
                                 <th scope="col">Resultado</th>
-                                <th scope="col">Odd</th>
-                                <th scope="col">Stake</th>
-                                <th scope="col">Lucro</th>
+                                <th scope="col" class="tr-num">Odd</th>
+                                <th scope="col" class="tr-num">Stake</th>
+                                <th scope="col" class="tr-num">Lucro</th>
                             </tr>
                         </thead>
                         <tbody id="tr-body"></tbody>
@@ -309,15 +305,16 @@
             </div>
         </div>
 
+        <!-- TAB: ESTILOS DE JOGO (CLUSTERING) -->
         <div id="tab-clustering" class="tab-content" role="tabpanel" aria-labelledby="tabbtn-clustering" tabindex="0" hidden>
-            <header class="stats-header">
-                <h2>Clustering de Jogadores</h2>
-                <p class="subtitle">Perfis de estilo, distribuição dos clusters e resumo do modelo</p>
-            </header>
+            <div class="page-head">
+                <h2>Estilos de jogo</h2>
+                <p class="subtitle">Jogadores agrupados por perfil de jogo (clustering), e como esses grupos se distribuem.</p>
+            </div>
 
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">Jogadores Analisados</div>
+                    <div class="stat-label">Jogadores analisados</div>
                     <div id="cluster-total-players" class="stat-value">--</div>
                 </div>
                 <div class="stat-card">
@@ -329,54 +326,38 @@
                     <div id="cluster-total-clusters" class="stat-value">--</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-label">Perfil Dominante</div>
-                    <div id="cluster-top-style" class="stat-value">--</div>
+                    <div class="stat-label">Perfil dominante</div>
+                    <div id="cluster-top-style" class="stat-value sm">--</div>
                 </div>
             </div>
 
             <div class="cluster-meta-grid">
                 <div class="cluster-meta-card">
-                    <h3>Modelo Selecionado</h3>
+                    <h3>Modelo selecionado</h3>
                     <div id="cluster-best-method" class="cluster-meta-value">--</div>
                     <div id="cluster-best-method-meta" class="cluster-meta-subtitle">--</div>
                 </div>
                 <div class="cluster-meta-card">
-                    <h3>Tamanho do Maior Cluster</h3>
+                    <h3>Maior cluster</h3>
                     <div id="cluster-largest-size" class="cluster-meta-value">--</div>
                     <div id="cluster-largest-share" class="cluster-meta-subtitle">--</div>
                 </div>
                 <div class="cluster-meta-card">
-                    <h3>Qualidade do Melhor Modelo</h3>
+                    <h3>Qualidade (silhouette)</h3>
                     <div id="cluster-best-score" class="cluster-meta-value">--</div>
                     <div id="cluster-best-score-meta" class="cluster-meta-subtitle">--</div>
                 </div>
             </div>
 
             <div class="cluster-toolbar">
-                <label for="playerSearch">Filtro por Jogador:</label>
-
+                <label for="playerSearch">Ver um jogador</label>
                 <div class="player-search-wrapper">
-                    <input
-                        type="text"
-                        id="playerSearch"
-                        placeholder="Pesquisar jogador..."
-                        autocomplete="off"
-                        role="combobox"
-                        aria-autocomplete="list"
-                        aria-expanded="false"
-                        aria-controls="playerSearchResults"
-                    >
-
-                    <button
-                        type="button"
-                        id="clearPlayerSearch"
-                        class="clear-player-search"
-                        title="Mostrar todos os jogadores"
-                        aria-label="Limpar pesquisa e mostrar todos os jogadores"
-                    >
+                    <input type="text" id="playerSearch" placeholder="Pesquisar jogador…" autocomplete="off"
+                           role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="playerSearchResults">
+                    <button type="button" id="clearPlayerSearch" class="clear-player-search"
+                            title="Mostrar todos os jogadores" aria-label="Limpar pesquisa e mostrar todos os jogadores">
                         <span aria-hidden="true">×</span>
                     </button>
-
                     <div id="playerSearchResults" class="player-search-results" role="listbox" aria-label="Jogadores"></div>
                 </div>
             </div>
@@ -385,30 +366,30 @@
 
             <div class="cluster-chart-grid">
                 <div class="chart-card">
-                    <h3>Espaço 2D dos Jogadores</h3>
-                    <canvas role="img" aria-label="Gráfico de dispersão: jogadores no espaço 2D dos estilos de jogo, coloridos por cluster" id="clusterScatterChart"></canvas>
+                    <h3>Mapa 2D dos jogadores</h3>
+                    <div class="chart-box tall"><canvas id="clusterScatterChart" role="img" aria-label="Gráfico de dispersão: jogadores no espaço 2D dos estilos de jogo, coloridos por cluster"></canvas></div>
                 </div>
                 <div class="chart-card">
-                    <h3>Distribuição por Cluster</h3>
-                    <canvas role="img" aria-label="Gráfico: número de jogadores em cada cluster" id="clusterDistributionChart"></canvas>
+                    <h3>Jogadores por cluster</h3>
+                    <div class="chart-box tall"><canvas id="clusterDistributionChart" role="img" aria-label="Gráfico: número de jogadores em cada cluster"></canvas></div>
                 </div>
                 <div class="chart-card">
-                    <h3>Evolução por Temporada</h3>
-                    <canvas role="img" aria-label="Gráfico: evolução dos clusters por temporada" id="clusterTrendChart"></canvas>
+                    <h3>Evolução por temporada</h3>
+                    <div class="chart-box tall"><canvas id="clusterTrendChart" role="img" aria-label="Gráfico: evolução dos clusters por temporada"></canvas></div>
                 </div>
                 <div class="chart-card radar-card">
-                    <h3>Radar do Perfil</h3>
-                    <canvas role="img" aria-label="Gráfico radar: perfil de estilo do jogador ou cluster selecionado" id="clusterRadarChart"></canvas>
+                    <h3>Radar do perfil</h3>
+                    <div class="chart-box tall"><canvas id="clusterRadarChart" role="img" aria-label="Gráfico radar: perfil de estilo do jogador ou cluster selecionado"></canvas></div>
                 </div>
             </div>
 
             <div class="section">
-                <h2>Perfis por Cluster</h2>
+                <h2>Perfis por cluster</h2>
                 <div id="cluster-cards" class="cluster-card-grid"></div>
             </div>
 
             <div class="section">
-                <h2>Distribuição de Estilos</h2>
+                <h2>Distribuição de estilos</h2>
                 <div id="style-breakdown" class="cluster-card-grid"></div>
             </div>
         </div>
@@ -440,6 +421,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"
             integrity="sha512-SIMGYRUjwY8+gKg7nn9EItdD8LCADSDfJNutF9TPrvEo86sQmFMh6MyralfIyhADlajSxqc7G0gs7+MwWF/ogQ=="
             crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="js/app.js?v=2"></script>
+    <script src="js/app.js?v=4"></script>
 </body>
 </html>
