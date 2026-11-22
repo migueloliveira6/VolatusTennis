@@ -1382,108 +1382,35 @@ select {
     color: var(--muted);
 }
 
-/* ==================== ECRÃ DE LOADING ==================== */
-.loading-screen {
+/* ==================== SPLASH (abertura da app) ==================== */
+/* Logo centrado e parado sobre o fundo, igual ao splash nativo da PWA instalada
+   (manifest: background_color + ícone). Desaparece em fade quando a página está pronta. */
+.splash {
     position: fixed;
     inset: 0;
     z-index: 9999;
     display: grid;
     place-items: center;
-    background: radial-gradient(60% 50% at 50% 42%, rgba(167, 139, 250, 0.16), transparent 70%), var(--bg);
+    background: var(--bg);
+    transition: opacity 0.4s ease, visibility 0.4s ease;
 }
 
-.loading-screen.is-hidden {
+.splash.is-hidden {
+    opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    animation: loadingOut 0.3s ease forwards;
 }
 
-.loading-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 28px;
-    padding: 0 20px;
-    text-align: center;
+.splash-logo {
+    width: 96px;
+    height: 96px;
+    border-radius: 22px;
 }
 
-.loading-brand {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-}
-
-.loading-logo {
-    width: 56px;
-    height: 56px;
-    border-radius: 16px;
-}
-
-.loading-content h1 {
-    font: 400 clamp(1.7rem, 6vw, 2.4rem) var(--font-display);
-    letter-spacing: 0.03em;
-}
-
-.loading-content h1 span {
-    color: var(--accent);
-}
-
-.loading-court {
-    position: relative;
-    width: 60px;
-    height: 72px;
-}
-
-.loading-court::after {
-    content: '';
-    position: absolute;
-    left: -40px;
-    right: -40px;
-    bottom: 3px;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, var(--line-strong) 30%, var(--line-strong) 70%, transparent);
-}
-
-.loading-ball {
-    position: absolute;
-    left: 50%;
-    bottom: 12px;
-    width: 30px;
-    height: 30px;
-    margin: 0 0 0 -15px;
-    animation: ballBounce 0.6s cubic-bezier(0.5, 0, 1, 0.5) infinite alternate;
-}
-
-.loading-shadow {
-    position: absolute;
-    left: 50%;
-    bottom: 0;
-    width: 30px;
-    height: 7px;
-    margin-left: -15px;
-    border-radius: 50%;
-    background: rgba(167, 139, 250, 0.4);
-    animation: shadowBounce 0.6s cubic-bezier(0.5, 0, 1, 0.5) infinite alternate;
-}
-
-.loading-status {
-    min-height: 1.2em;
-    font-size: 14px;
-    color: var(--muted);
-}
-
-@keyframes ballBounce {
-    from { transform: translateY(-34px) rotate(0deg); }
-    to { transform: translateY(0) rotate(160deg); }
-}
-
-@keyframes shadowBounce {
-    from { transform: scale(0.55); opacity: 0.25; }
-    to { transform: scale(1); opacity: 0.7; }
-}
-
-@keyframes loadingOut {
-    to { opacity: 0; visibility: hidden; }
+@media (prefers-reduced-motion: reduce) {
+    .splash {
+        transition: none;
+    }
 }
 
 /* ==================== APP (PWA): avisos e diálogo ==================== */

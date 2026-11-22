@@ -1435,8 +1435,8 @@ function renderTrackTable(rows) {
     document.getElementById('tr-more').hidden = visible.length >= sorted.length;
 }
 
-// Pequena espera mínima só para evitar um "flash" do ecrã de loading
-// quando tudo carrega quase instantaneamente.
+// Splash de abertura: o logo fica parado enquanto a página e as previsões carregam,
+// com um mínimo curto para não piscar quando a app abre da cache.
 const minDelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Se por algum motivo os dados nunca chegarem (rede em baixo, etc.),
@@ -1451,16 +1451,19 @@ const windowLoaded = new Promise(resolve => {
     else window.addEventListener('load', resolve, { once: true });
 });
 
-Promise.all([windowLoaded, readyOrTimeout, minDelay(600)]).then(() => {
-    const loadingScreen = document.getElementById('loadingScreen');
-    if (!loadingScreen) return;
-
-    loadingScreen.addEventListener('animationend', () => loadingScreen.remove(), { once: true });
-    loadingScreen.classList.add('is-hidden');
+Promise.all([windowLoaded, readyOrTimeout, minDelay(400)]).then(() => {
+    const splash = document.getElementById('loadingScreen');
+    if (!splash) return;
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        loadingScreen.remove();
+        splash.remove();
+        return;
     }
+    // fade de opacidade (CSS) e remoção no fim; o timeout cobre o caso de a transição não disparar
+    const remove = () => splash.remove();
+    splash.addEventListener('transitionend', remove, { once: true });
+    setTimeout(remove, 700);
+    splash.classList.add('is-hidden');
 });
 
 // ==================== APP (PWA) ====================
