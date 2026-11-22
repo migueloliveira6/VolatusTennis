@@ -25,7 +25,7 @@ function setTabStatus(panelId, state, message = '', retry = null) {
         box.className = 'tab-status';
         box.setAttribute('role', 'status');
         box.setAttribute('aria-live', 'polite');
-        (panel.querySelector('.stats-header') || panel.firstElementChild).insertAdjacentElement('afterend', box);
+        (panel.querySelector('.page-head') || panel.firstElementChild).insertAdjacentElement('afterend', box);
     }
     panel.setAttribute('aria-busy', state === 'loading' ? 'true' : 'false');
     box.className = `tab-status is-${state}`;
@@ -51,20 +51,74 @@ function setTabStatus(panelId, state, message = '', retry = null) {
     }
 }
 
-// Carregar dados
+// ==================== TEMA (cores partilhadas com o CSS) ====================
+const THEME = {
+    accent: '#a78bfa',
+    accentSoft: 'rgba(167, 139, 250, 0.16)',
+    pos: '#4ade80',
+    neg: '#f87171',
+    text: '#f2f0fa',
+    muted: '#a9a4c4',
+    grid: 'rgba(255, 255, 255, 0.08)',
+    hard: '#5b9cff',
+    clay: '#e8884a',
+    grass: '#5fcf80',
+    // séries dos gráficos, pela ordem em que aparecem
+    series: ['#a78bfa', '#5b9cff', '#e8884a', '#4ade80', '#ff6b9d', '#feca57'],
+};
+
+if (typeof Chart !== 'undefined') {
+    Chart.defaults.color = THEME.muted;
+    Chart.defaults.borderColor = THEME.grid;
+    Chart.defaults.font.family = "'Sakana', system-ui, sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.animation.duration = 400;
+    Object.assign(Chart.defaults.plugins.legend.labels, { usePointStyle: true, boxWidth: 8, boxHeight: 8 });
+    Object.assign(Chart.defaults.plugins.tooltip, {
+        backgroundColor: '#1b1829',
+        titleColor: THEME.text,
+        bodyColor: THEME.text,
+        borderColor: '#3a3458',
+        borderWidth: 1,
+        padding: 10,
+        cornerRadius: 8,
+    });
+}
+
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const surfaceColor = s => {
+    s = String(s || '').toLowerCase();
+    return s.includes('clay') ? 'var(--clay)' : s.includes('grass') ? 'var(--grass)' : s.includes('hard') ? 'var(--hard)' : 'var(--muted)';
+};
+
+// ==================== PREVISÕES ====================
+let onlyValue = false;      // chip "Só com valor"
+let sortMode = 'tourney';   // 'tourney' (agrupado) | 'conf' | 'value'
+let siteStatus = { status: 'ready' };
+
+const hasValue = m => Number(m["Valor Aposta"]) > 0;
+const confOf = m => Number(m["Confiança (%)"]) || 0;
+const roiOf = m => Number(m["ROI Esperado (%)"]) || 0;
+
 Promise.all([
     getJSON('predicts/predictions.json'),
     getJSON('predicts/status.json').catch(() => ({ status: 'ready' }))
 ])
     .then(([data, status]) => {
-        allMatches = data;
-        renderChips();
-        renderStats(data);
-        renderPredictions(data, status);
+        allMatches = Array.isArray(data) ? data : [];
+        siteStatus = status || { status: 'ready' };
+        document.getElementById('sortSelect').addEventListener('change', event => {
+            sortMode = event.target.value;
+            updatePredictions();
+        });
+        updatePredictions();
     })
     .catch(error => {
         console.error('Erro ao carregar previsões:', error);
+        document.getElementById('stats').hidden = true;
         const container = document.getElementById('predictions');
+        container.classList.remove('loading');
         container.textContent = '';
         const box = document.createElement('div');
         box.className = 'tab-status is-error';
@@ -83,140 +137,197 @@ Promise.all([
         resolvePredictionsReady();
     });
 
-let onlyValue = false; // chip "Só com valor"
+// Aplica filtros + ordenação e volta a desenhar KPIs, chips e lista
+function updatePredictions() {
+    const stats = document.getElementById('stats');
+    const toolbar = document.getElementById('predToolbar');
+    const noMatches = siteStatus.status === 'no_matches' || allMatches.length === 0;
+    stats.setAttribute('aria-busy', 'false');
+    stats.hidden = noMatches;
+    toolbar.hidden = noMatches;
+    if (noMatches) {
+        renderNoMatches();
+        return;
+    }
+
+    let list = currentFilter === 'all' ? allMatches : allMatches.filter(m => m.Torneio === currentFilter);
+    if (onlyValue) list = list.filter(hasValue);
+    renderChips();
+    renderStats(list);
+    renderPredictions(list);
+}
 
 function renderChips() {
     const row = document.getElementById('tournamentChips');
     if (!row) return;
     const tournaments = [...new Set(allMatches.map(m => m.Torneio))].sort();
-    const valueCount = allMatches.filter(m => m["Valor Aposta"] > 0).length;
-    const chip = (label, active, onClick) => {
+    const chip = (label, count, active, onClick, extraClass = '') => {
         const b = document.createElement('button');
         b.type = 'button';
-        b.className = 'flt' + (active ? ' on' : '');
+        b.className = `flt ${extraClass}${active ? ' on' : ''}`.replace('  ', ' ');
         b.setAttribute('aria-pressed', active ? 'true' : 'false');
-        b.textContent = label;
+        b.append(label, ' ');
+        const n = document.createElement('small');
+        n.textContent = count;
+        b.appendChild(n);
         b.addEventListener('click', onClick);
         return b;
     };
-    const chips = [chip(`Todos · ${allMatches.length}`, currentFilter === 'all', () => setTournament('all'))];
+    const setTournament = t => { currentFilter = t; updatePredictions(); };
+    const chips = [
+        chip('Só com valor', allMatches.filter(hasValue).length, onlyValue,
+            () => { onlyValue = !onlyValue; updatePredictions(); }, 'flt-value'),
+        chip('Todos', allMatches.length, currentFilter === 'all', () => setTournament('all')),
+    ];
     if (tournaments.length > 1) {
         tournaments.forEach(t => chips.push(
-            chip(`${t} · ${allMatches.filter(m => m.Torneio === t).length}`, currentFilter === t, () => setTournament(t))
+            chip(t, allMatches.filter(m => m.Torneio === t).length, currentFilter === t, () => setTournament(t))
         ));
     }
-    chips.push(chip(`Só com valor · ${valueCount}`, onlyValue, () => { onlyValue = !onlyValue; filterByTournament(); }));
     row.replaceChildren(...chips);
 }
 
-function setTournament(t) {
-    currentFilter = t;
-    filterByTournament();
-}
-
-function filterByTournament() {
-    let list = currentFilter === 'all' ? allMatches : allMatches.filter(m => m.Torneio === currentFilter);
-    if (onlyValue) list = list.filter(m => m["Valor Aposta"] > 0);
-    renderStats(list);
-    renderPredictions(list, { status: 'ready' });
-    renderChips();
-}
-
 function renderStats(data) {
-    const totalMatches = data.length;
-    const avgConfidence = totalMatches > 0 ? 
-        (data.reduce((sum, m) => sum + m["Confiança (%)"], 0) / totalMatches).toFixed(1) : 0;
-    const tournaments = [...new Set(data.map(m => m.Torneio))].length;
-    const avgRoi = totalMatches > 0 ? 
-        (data.reduce((sum, m) => sum + m["ROI Esperado (%)"], 0) / totalMatches).toFixed(1) : 0;
+    const total = data.length;
+    const valueBets = data.filter(hasValue);
+    const avg = (list, fn) => list.reduce((sum, m) => sum + fn(m), 0) / list.length;
 
-    document.getElementById('totalMatches').textContent = totalMatches;
-    document.getElementById('avgConfidence').textContent = avgConfidence + '%';
-    document.getElementById('tournaments').textContent = tournaments;
-    document.getElementById('avgRoi').textContent = avgRoi + '%';
+    document.getElementById('totalMatches').textContent = total;
+    document.getElementById('valueCount').textContent = valueBets.length;
+    document.getElementById('avgConfidence').textContent = total ? `${avg(data, confOf).toFixed(1)}%` : '–';
+    // ROI médio só das apostas com valor (as restantes têm ROI 0 e diluíam a média)
+    const roi = valueBets.length ? avg(valueBets, roiOf) : null;
+    document.getElementById('avgRoi').textContent = roi === null ? '–' : `${roi > 0 ? '+' : ''}${roi.toFixed(1)}%`;
 }
 
-function renderPredictions(data, status = { status: 'ready' }) {
+function renderNoMatches() {
+    const container = document.getElementById('predictions');
+    container.classList.remove('loading');
+    const message = siteStatus.message || 'Não há jogos de ténis disponíveis para hoje.';
+    const telegram = TELEGRAM_INVITE_URL
+        ? `<a class="app-action app-action-telegram" href="${esc(TELEGRAM_INVITE_URL)}" target="_blank" rel="noopener">Receber aviso no Telegram</a>`
+        : '';
+    container.innerHTML = `
+        <div class="empty">
+            <div class="ball" aria-hidden="true"></div>
+            <h2>Hoje não há jogos</h2>
+            <p>${esc(message)} As previsões voltam assim que houver jogos.</p>
+            ${telegram}
+        </div>`;
+}
+
+const ICON_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>';
+const ICON_CHEVRON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>';
+
+function matchCard(match, showMeta) {
+    const short = n => String(n || '').trim().split(/\s+/).pop();
+    const odd = o => (o !== null && o !== '' && Number.isFinite(Number(o)) ? Number(o).toFixed(2) : '–');
+
+    const p1 = match["Jogador 1"], p2 = match["Jogador 2"];
+    const winner = match["Vencedor Previsto"];
+    const w1 = winner === p1;
+    const conf = confOf(match);
+    const prob1 = w1 ? conf : 100 - conf;
+    const prob2 = 100 - prob1;
+
+    const elo = Number(match["ELO Diff"]) || 0; // Jogador 1 - Jogador 2
+    const eloText = elo === 0 ? 'Igual' : `${esc(short(elo > 0 ? p1 : p2))} +${Math.round(Math.abs(elo))}`;
+    const h2hRaw = String(match.H2H ?? '–');
+    const h2h = /sem confrontos/i.test(h2hRaw) ? 'Sem confrontos anteriores' : h2hRaw;
+    const valor = Number(match["Valor Aposta"]) || 0;
+    const roi = roiOf(match);
+    const roiText = `${roi > 0 ? '+' : ''}${roi.toFixed(1)}%`;
+    const stakeText = `${(valor * 100).toFixed(1)}% da banca`;
+
+    const oddWin = Number(w1 ? match["Odd 1"] : match["Odd 2"]);
+    const implied = oddWin > 0 ? 100 / oddWin : null;
+    let note = '';
+    if (implied !== null && valor > 0 && implied < conf) {
+        note = `O modelo dá ${conf.toFixed(1)}% a ${esc(short(winner))}, mas as odds de ${oddWin.toFixed(2)} implicam apenas ${implied.toFixed(0)}%.`;
+    } else if (implied !== null && valor <= 0 && implied > conf) {
+        note = `Porquê sem valor? As odds de ${oddWin.toFixed(2)} implicam ${implied.toFixed(0)}% de probabilidade, acima dos ${conf.toFixed(1)}% do modelo.`;
+    } else if (implied !== null && valor <= 0) {
+        note = `Porquê sem valor? A vantagem do modelo sobre as odds (${(conf - implied).toFixed(1)} p.p.) fica abaixo do mínimo para apostar.`;
+    }
+
+    const row = (name, oddValue, prob, win) => `
+                <div class="mx-row${win ? ' win' : ''}">
+                    <span class="mx-name">${win ? `${ICON_CHECK}<span class="sr-only">Previsão do modelo: </span>` : '<span class="ph"></span>'}<span>${esc(name)}</span></span>
+                    <span class="mx-odd">${odd(oddValue)}</span>
+                    <span class="mx-prob">${prob.toFixed(1)}%</span>
+                </div>`;
+
+    return `
+        <article class="mx${valor > 0 ? ' has-value' : ''}">
+            <div class="mx-main">
+                <div class="mx-head">
+                    <span class="mx-meta">${showMeta ? `<i class="dot" style="background:${surfaceColor(match.Superfície)}"></i>${esc(match.Torneio)} · ${esc(match.Superfície)}` : ''}</span>
+                    ${valor > 0 ? `<span class="badge badge-value">Valor · ROI ${roiText}</span>` : '<span class="badge">Sem valor</span>'}
+                </div>
+                <div class="mx-cols" aria-hidden="true"><span>Jogador</span><span>Odd</span><span>Modelo</span></div>
+                ${row(p1, match["Odd 1"], prob1, w1)}
+                ${row(p2, match["Odd 2"], prob2, !w1)}
+                <div class="mx-bar" role="img" aria-label="Probabilidade: ${esc(p1)} ${prob1.toFixed(1)}%, ${esc(p2)} ${prob2.toFixed(1)}%">
+                    <i class="${w1 ? 'w' : ''}" style="width:${prob1}%"></i>
+                    <i class="${w1 ? '' : 'w'}" style="width:${prob2}%"></i>
+                </div>
+            </div>
+            <details class="mx-more">
+                <summary>
+                    <span>${valor > 0 ? `Stake sugerido <b class="pos">${stakeText}</b>` : 'Sem aposta sugerida'}</span>
+                    <span class="mx-toggle">Detalhes ${ICON_CHEVRON}</span>
+                </summary>
+                <dl class="mx-facts">
+                    <div><dt>Diferença de ELO</dt><dd>${eloText}</dd></div>
+                    <div><dt>Confrontos diretos</dt><dd>${esc(h2h)}</dd></div>
+                    <div><dt>Stake sugerido</dt><dd class="${valor > 0 ? 'pos' : 'zero'}">${valor > 0 ? stakeText : 'Sem valor'}</dd></div>
+                    <div><dt>ROI esperado</dt><dd class="${roi > 0 ? 'pos' : roi < 0 ? 'neg' : 'zero'}">${roiText}</dd></div>
+                </dl>
+                ${note ? `<p class="mx-note">${note}</p>` : ''}
+            </details>
+        </article>`;
+}
+
+function renderPredictions(data) {
     const container = document.getElementById('predictions');
     container.classList.remove('loading');
 
-    if (status.status === 'no_matches') {
-        container.innerHTML = `<p class="mx-empty">${status.message}</p>`;
-        return;
-    }
     if (data.length === 0) {
-        container.innerHTML = '<p class="mx-empty">Nenhum jogo encontrado para este filtro</p>';
+        container.innerHTML = `
+            <div class="empty">
+                <h2>Nenhum jogo com este filtro</h2>
+                <p>Experimente outro torneio ou desligue o filtro "Só com valor".</p>
+                <button type="button" class="tab-status-retry" id="clearFilters">Limpar filtros</button>
+            </div>`;
+        document.getElementById('clearFilters').addEventListener('click', () => {
+            currentFilter = 'all';
+            onlyValue = false;
+            updatePredictions();
+        });
         return;
     }
 
-    const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const short = n => String(n || '').trim().split(/\s+/).pop();
-    const odd = o => Number.isFinite(Number(o)) && o !== null && o !== '' ? Number(o).toFixed(2) : esc(o);
-    const surfaceColor = s => {
-        s = String(s || '').toLowerCase();
-        return s.includes('clay') ? 'var(--clay)' : s.includes('grass') ? 'var(--grass)' : s.includes('hard') ? 'var(--hard)' : 'var(--muted)';
-    };
+    const byConf = (a, b) => confOf(b) - confOf(a);
+    const grid = (list, showMeta) => `<div class="mx-grid">${list.map(m => matchCard(m, showMeta)).join('')}</div>`;
 
-    container.innerHTML = data.map(match => {
-        const p1 = match["Jogador 1"], p2 = match["Jogador 2"];
-        const winner = match["Vencedor Previsto"];
-        const w1 = winner === p1;
-        const conf = Number(match["Confiança (%)"]) || 0;
-        const prob1 = w1 ? conf : 100 - conf;
-        const prob2 = 100 - prob1;
-
-        const elo = Number(match["ELO Diff"]) || 0; // Jogador 1 - Jogador 2
-        const eloText = elo === 0 ? 'Igual' : `${esc(short(elo > 0 ? p1 : p2))} +${Math.round(Math.abs(elo))}`;
-        const h2h = String(match.H2H ?? '-');
-        const valor = Number(match["Valor Aposta"]) || 0;
-        const roi = Number(match["ROI Esperado (%)"]) || 0;
-
-        const oddWin = Number(w1 ? match["Odd 1"] : match["Odd 2"]);
-        const implied = oddWin > 0 ? 100 / oddWin : null;
-        let note = '';
-        if (implied !== null && valor > 0 && implied < conf) {
-            note = `O modelo dá ${conf.toFixed(1)}% a ${esc(short(winner))}, mas as odds de ${oddWin.toFixed(2)} implicam apenas ${implied.toFixed(0)}%.`;
-        } else if (implied !== null && valor <= 0 && implied > conf) {
-            note = `Porquê sem valor? As odds de ${oddWin.toFixed(2)} implicam ${implied.toFixed(0)}% de probabilidade, acima dos ${conf.toFixed(1)}% do modelo.`;
-        } else if (implied !== null && valor <= 0) {
-            note = `Porquê sem valor? A vantagem do modelo sobre as odds (${(conf - implied).toFixed(1)} p.p.) fica abaixo do mínimo para apostar.`;
-        }
-
-        return `
-        <article class="mx">
-            <div class="mx-top">
-                <div class="mx-m"><span class="mx-dot" style="background:${surfaceColor(match.Superfície)}"></span>${esc(match.Torneio)} · ${esc(match.Superfície)}</div>
-                <div class="mx-conf"><b>${conf.toFixed(1)}%</b> <span class="mx-m">confiança</span></div>
-            </div>
-
-            <div class="mx-players">
-                <div class="mx-p ${w1 ? 'win' : ''}">
-                    <div class="mx-m tag">${w1 ? 'Previsão do modelo' : '&nbsp;'}</div>
-                    <div class="n">${esc(p1)}</div>
-                    <div class="mx-m">Odds ${odd(match["Odd 1"])}</div>
-                </div>
-                <div class="mx-p ${w1 ? '' : 'win'}">
-                    <div class="mx-m tag">${w1 ? '&nbsp;' : 'Previsão do modelo'}</div>
-                    <div class="n">${esc(p2)}</div>
-                    <div class="mx-m">Odds ${odd(match["Odd 2"])}</div>
-                </div>
-            </div>
-
-            <div class="mx-bar" role="img" aria-label="Probabilidade: ${esc(p1)} ${prob1.toFixed(1)}%, ${esc(p2)} ${prob2.toFixed(1)}%">
-                <i class="${w1 ? 'w' : ''}" style="width:${prob1}%"></i>
-                <i class="${w1 ? '' : 'w'}" style="width:${prob2}%"></i>
-            </div>
-            <div class="mx-m mx-bar-l"><span>${esc(short(p1))} ${prob1.toFixed(1)}%</span><span>${esc(short(p2))} ${prob2.toFixed(1)}%</span></div>
-
-            <div class="mx-tiles">
-                <div class="mx-t"><span class="mx-m">Diferença ELO</span><b>${eloText}</b></div>
-                <div class="mx-t"><span class="mx-m">Confrontos diretos</span><b class="${h2h.length > 14 ? 'sm' : ''}">${esc(h2h)}</b></div>
-                <div class="mx-t"><span class="mx-m">Stake sugerido</span><b class="${valor > 0 ? 'pos' : 'zero'}" title="Fração da banca (Kelly fracionado)">${valor > 0 ? (valor * 100).toFixed(1) + '% da banca' : 'Sem valor'}</b></div>
-                <div class="mx-t"><span class="mx-m">ROI esperado</span><b class="${roi > 0 ? 'pos' : roi < 0 ? 'neg' : 'zero'}">${roi > 0 ? '+' : ''}${roi.toFixed(1)}%</b></div>
-            </div>
-            ${note ? `<p class="mx-note">${note}</p>` : ''}
-        </article>`;
-    }).join('');
+    if (sortMode === 'tourney') {
+        const groups = new Map();
+        data.forEach(m => {
+            if (!groups.has(m.Torneio)) groups.set(m.Torneio, []);
+            groups.get(m.Torneio).push(m);
+        });
+        container.innerHTML = [...groups.keys()].sort().map(name => {
+            const list = groups.get(name).sort(byConf);
+            const surface = list[0].Superfície;
+            return `
+            <h2 class="grp"><i class="dot" style="background:${surfaceColor(surface)}"></i>${esc(name)}
+                <small>${esc(surface)} · ${list.length} ${list.length === 1 ? 'jogo' : 'jogos'}</small></h2>
+            ${grid(list, false)}`;
+        }).join('');
+    } else {
+        const sorted = [...data].sort(sortMode === 'value' ? (a, b) => roiOf(b) - roiOf(a) || byConf(a, b) : byConf);
+        container.innerHTML = grid(sorted, true);
+    }
 }
 
 // ==================== SISTEMA DE TABS ====================
@@ -310,11 +421,13 @@ async function loadStatistics() {
     setTabStatus('tab-estatisticas', 'loading', 'A carregar estatísticas…');
     try {
         // Carregar dados
-        const [globalStats, byDate, byConfidence] = await Promise.all([
+        const [globalStats, byDate, byConfidenceRaw] = await Promise.all([
             getJSON('analytics/global_stats.json'),
             getJSON('analytics/accuracy_by_date.json'),
             getJSON('analytics/accuracy_by_confidence.json')
         ]);
+        const byConfidence = [...(byConfidenceRaw || [])]
+            .sort((a, b) => String(a.confidence_range).localeCompare(String(b.confidence_range)));
 
         console.debug('loadStatistics: fetched data', { globalStats, byDateLength: byDate.length, byConfidenceLength: byConfidence.length });
 
@@ -325,15 +438,12 @@ async function loadStatistics() {
         document.getElementById('kpi-wrong').textContent = globalStats.wrong;
 
         // Atualizar progress bar
-        const progressBar = document.getElementById('accuracy-progress-bar');
-        const progressLabel = document.getElementById('accuracy-progress-label');
-        progressBar.style.width = `${globalStats.accuracy}%`;
-        progressLabel.textContent = `${globalStats.accuracy}%`;
+        document.getElementById('accuracy-progress-bar').style.width = `${globalStats.accuracy}%`;
 
         // Se não houver dados temporais, mostrar mensagem e evitar criar gráficos vazios
         if (!byDate || byDate.length === 0) {
             document.querySelector('#tab-estatisticas .charts-section').insertAdjacentHTML('afterbegin',
-                `<div style="color: #ffb86b; text-align:center; padding: 20px;">⚠️ Sem dados de evolução por data.</div>`
+                `<p class="chart-note">Ainda sem dados de evolução por data.</p>`
             );
         } else {
             // Verificar se Chart foi carregado
@@ -350,8 +460,8 @@ async function loadStatistics() {
                     datasets: [{
                         label: 'Taxa de Acerto (%)',
                         data: trendSeries.data,
-                        borderColor: '#00c853',
-                        backgroundColor: 'rgba(0, 200, 83, 0.1)',
+                        borderColor: THEME.accent,
+                        backgroundColor: THEME.accentSoft,
                         tension: 0.4,
                         fill: true,
                         pointRadius: 4,
@@ -368,20 +478,20 @@ async function loadStatistics() {
                             min: 0,
                             max: 100,
                             ticks: { 
-                                color: '#cfcbe6',
+                                color: THEME.muted,
                                 callback: function(value) { return value + '%'; }
                             },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            grid: { color: THEME.grid }
                         },
                         x: {
                             ticks: {
-                                color: '#cfcbe6',
+                                color: THEME.muted,
                             },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            grid: { color: THEME.grid }
                         }
                     },
                     plugins: {
-                        legend: { labels: { color: '#cfcbe6' } },
+                        legend: { display: false },
                         tooltip: {
                             callbacks: {
                                 label: function(context) {
@@ -398,7 +508,7 @@ async function loadStatistics() {
         // Gráfico por faixa de confiança
         if (!byConfidence || byConfidence.length === 0) {
             document.querySelector('#tab-estatisticas .charts-section').insertAdjacentHTML('beforeend',
-                `<div style="color: #ffb86b; text-align:center; padding: 20px;">⚠️ Sem dados por faixa de confiança.</div>`
+                `<p class="chart-note">Ainda sem dados por faixa de confiança.</p>`
             );
         } else {
             console.debug('render confidence data', byConfidence.map(d => ({ range: d.confidence_range, accuracy: d.accuracy })));
@@ -411,9 +521,9 @@ async function loadStatistics() {
                     datasets: [{
                         label: 'Taxa de Acerto (%)',
                         data: byConfidence.map(d => Number(d.accuracy) || 0),
-                        backgroundColor: byConfidence.map((_, i) => ['rgba(164, 102, 234, 0.8)', 'rgba(102, 126, 234, 0.8)', 'rgba(118, 75, 162, 0.8)', 'rgba(103, 58, 183, 0.8)', 'rgba(81, 45, 168, 0.8)'][i % 5]),
-                        borderColor: '#a466ea',
-                        borderWidth: 2
+                        backgroundColor: THEME.accent,
+                        borderRadius: 6,
+                        maxBarThickness: 56
                     }]
                 },
                 options: {
@@ -426,13 +536,13 @@ async function loadStatistics() {
                             min: 0,
                             max: 100,
                             ticks: { 
-                                color: '#cfcbe6',
+                                color: THEME.muted,
                                 callback: function(value) { return value + '%'; }
                             },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            grid: { color: THEME.grid }
                         },
                         x: {
-                            ticks: { color: '#cfcbe6' },
+                            ticks: { color: THEME.muted },
                             grid: { display: false }
                         }
                     },
@@ -532,18 +642,23 @@ function renderTop10(top10Data, surface) {
     const players = top10Data[surface] || [];
 
     if (players.length === 0) {
-        container.innerHTML = '<p style="color: #999;">Sem dados disponíveis para esta superfície</p>';
+        container.innerHTML = '<p class="chart-note">Sem dados disponíveis para esta superfície</p>';
         return;
     }
 
-    const html = players.map((player, index) => `
+    const elos = players.map(p => Number(p.elo) || 0);
+    const max = Math.max(...elos), min = Math.min(...elos);
+    const html = players.map((player, index) => {
+        // barra relativa ao intervalo do top 10 (o último fica com 35%)
+        const width = max > min ? 35 + 65 * ((elos[index] - min) / (max - min)) : 100;
+        return `
         <div class="player-card">
             <div class="player-rank">${index + 1}</div>
-            <div class="player-name-card">${player.name}</div>
-            <div class="player-elo">${Number(player.elo).toFixed(0)}</div>
-            <div class="player-elo-label">ELO Rating</div>
-        </div>
-    `).join('');
+            <div class="player-name-card">${esc(player.name)}</div>
+            <div class="player-elo">${elos[index].toFixed(0)}<small>ELO</small></div>
+            <div class="player-bar" style="--bar: var(--${esc(surface)})"><i style="width:${width.toFixed(0)}%"></i></div>
+        </div>`;
+    }).join('');
 
     container.innerHTML = html;
 }
@@ -559,7 +674,7 @@ function renderEloTrends(eloTrendsData) {
 
     // Preparar dados para o gráfico
     const datasets = [];
-    const colors = ['#667eea', '#c084fc', '#a466ea', '#ff6b9d', '#feca57'];
+    const colors = THEME.series;
     let allDates = new Set();
 
     // Recolher todas as datas
@@ -586,10 +701,11 @@ function renderEloTrends(eloTrendsData) {
                 data: eloData,
                 borderColor: colors[index % colors.length],
                 backgroundColor: 'transparent',
-                tension: 0.4,
+                tension: 0.3,
                 fill: false,
-                pointRadius: 3,
-                pointHoverRadius: 5,
+                pointRadius: 0,
+                pointHoverRadius: 4,
+                spanGaps: true,
                 borderWidth: 2
             });
         }
@@ -615,31 +731,26 @@ function renderEloTrends(eloTrendsData) {
             scales: {
                 y: {
                     ticks: {
-                        color: '#cfcbe6'
+                        color: THEME.muted
                     },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    grid: { color: THEME.grid }
                 },
                 x: {
                     ticks: {
-                        color: '#cfcbe6',
-                        maxRotation: 45,
-                        minRotation: 0
+                        color: THEME.muted,
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 8
                     },
-                    grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    grid: { color: THEME.grid }
                 }
             },
             plugins: {
                 legend: {
-                    labels: { color: '#cfcbe6' },
+                    labels: { color: THEME.muted },
                     position: 'top'
                 },
-                tooltip: {
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    titleColor: '#ffffff',
-                    bodyColor: '#ffffff',
-                    borderColor: '#c084fc',
-                    borderWidth: 1
-                }
+                tooltip: { mode: 'index', intersect: false }
             }
         }
     });
@@ -693,12 +804,12 @@ async function loadClustering() {
                         ${positives.map(feature => `<span class="chip">+ ${feature}</span>`).join('')}
                     </div>
                     ${negatives.length ? `<div class="chip-list">${negatives.map(feature => `<span class="chip">- ${feature}</span>`).join('')}</div>` : ''}
-                    ${representatives ? `<div class="cluster-meta-subtitle" style="margin-top:12px;">Exemplos: ${representatives}</div>` : ''}
+                    ${representatives ? `<div class="cluster-meta-subtitle" style="margin-top:12px;">Exemplos: ${esc(representatives)}</div>` : ''}
                 </div>
             `;
         }).join('');
 
-        document.getElementById('cluster-cards').innerHTML = clusterCards || '<p style="color: #999;">Sem clusters para mostrar.</p>';
+        document.getElementById('cluster-cards').innerHTML = clusterCards || '<p class="chart-note">Sem clusters para mostrar.</p>';
 
         const styleBreakdown = (summary.style_distribution || []).map(item => `
             <div class="cluster-meta-card">
@@ -707,7 +818,7 @@ async function loadClustering() {
                 <div class="cluster-meta-subtitle">${item.share_pct}% dos jogadores</div>
             </div>
         `).join('');
-        document.getElementById('style-breakdown').innerHTML = styleBreakdown || '<p style="color: #999;">Sem distribuição de estilos disponível.</p>';
+        document.getElementById('style-breakdown').innerHTML = styleBreakdown || '<p class="chart-note">Sem distribuição de estilos disponível.</p>';
 
         refreshClusteringCharts();
 
@@ -767,7 +878,7 @@ function populatePlayerFilter(players) {
             results.appendChild(option);
         }
 
-        addOption('👥 Todos os jogadores', 'all', 'all-players');
+        addOption('Todos os jogadores', 'all', 'all-players');
 
         if (filteredPlayers.length === 0) {
             const noResults = document.createElement('div');
@@ -943,16 +1054,16 @@ function renderClusterScatter(player) {
                 {
                     label: selectedName ? 'Outros jogadores' : 'Jogadores',
                     data: baseDataset,
-                    backgroundColor: 'rgba(164, 102, 234, 0.35)',
-                    borderColor: 'rgba(164, 102, 234, 0.35)',
-                    pointRadius: 4,
+                    backgroundColor: 'rgba(167, 139, 250, 0.35)',
+                    borderColor: 'rgba(167, 139, 250, 0.35)',
+                    pointRadius: 3,
                     pointHoverRadius: 6
                 },
                 {
                     label: selectedName || 'Destaque',
                     data: highlightDataset,
-                    backgroundColor: '#ffb86b',
-                    borderColor: '#ffb86b',
+                    backgroundColor: THEME.accent,
+                    borderColor: THEME.accent,
                     pointRadius: 6,
                     pointHoverRadius: 8
                 }
@@ -962,11 +1073,11 @@ function renderClusterScatter(player) {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                x: { ticks: { color: '#cfcbe6' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                y: { ticks: { color: '#cfcbe6' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                x: { ticks: { color: THEME.muted }, grid: { color: THEME.grid } },
+                y: { ticks: { color: THEME.muted }, grid: { color: THEME.grid } }
             },
             plugins: {
-                legend: { labels: { color: '#cfcbe6' } },
+                legend: { labels: { color: THEME.muted } },
                 tooltip: {
                     callbacks: {
                         label(context) {
@@ -993,8 +1104,9 @@ function renderClusterDistribution() {
             datasets: [{
                 label: 'Jogadores',
                 data: clusters.map(item => item.size),
-                backgroundColor: ['#667eea', '#c084fc', '#a466ea', '#ffb86b', '#00c853'],
-                borderRadius: 10
+                backgroundColor: THEME.series,
+                borderRadius: 6,
+                maxBarThickness: 56
             }]
         },
         options: {
@@ -1005,8 +1117,8 @@ function renderClusterDistribution() {
                 tooltip: { callbacks: { label(context) { return `${context.parsed.y} jogadores`; } } }
             },
             scales: {
-                y: { beginAtZero: true, ticks: { color: '#cfcbe6' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                x: { ticks: { color: '#cfcbe6' }, grid: { display: false } }
+                y: { beginAtZero: true, ticks: { color: THEME.muted }, grid: { color: THEME.grid } },
+                x: { ticks: { color: THEME.muted }, grid: { display: false } }
             }
         }
     });
@@ -1025,7 +1137,7 @@ function renderClusterTrend() {
             const match = trend.find(item => item.season === season && item.cluster === cluster);
             return match ? match.count : 0;
         }),
-        borderColor: ['#667eea', '#ffb86b', '#a466ea', '#00c853', '#ff5252'][index % 5],
+        borderColor: THEME.series[index % THEME.series.length],
         backgroundColor: 'transparent',
         tension: 0.35,
         fill: false
@@ -1039,11 +1151,11 @@ function renderClusterTrend() {
             responsive: true,
             maintainAspectRatio: false,
             scales: {
-                y: { ticks: { color: '#cfcbe6' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                x: { ticks: { color: '#cfcbe6' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                y: { ticks: { color: THEME.muted }, grid: { color: THEME.grid } },
+                x: { ticks: { color: THEME.muted }, grid: { color: THEME.grid } }
             },
             plugins: {
-                legend: { labels: { color: '#cfcbe6' } }
+                legend: { labels: { color: THEME.muted } }
             }
         }
     });
@@ -1065,10 +1177,10 @@ function renderClusterRadar(player) {
             datasets: [{
                 label: player?.player_name || profile.style_label || 'Cluster',
                 data: profile.values || [],
-                borderColor: '#ffb86b',
-                backgroundColor: 'rgba(255, 184, 107, 0.2)',
-                pointBackgroundColor: '#ffb86b',
-                pointBorderColor: '#ffffff',
+                borderColor: THEME.accent,
+                backgroundColor: THEME.accentSoft,
+                pointBackgroundColor: THEME.accent,
+                pointBorderColor: THEME.accent,
                 pointHoverRadius: 5
             }]
         },
@@ -1077,14 +1189,14 @@ function renderClusterRadar(player) {
             maintainAspectRatio: false,
             scales: {
                 r: {
-                    angleLines: { color: 'rgba(255,255,255,0.15)' },
-                    grid: { color: 'rgba(255,255,255,0.15)' },
-                    pointLabels: { color: '#cfcbe6' },
+                    angleLines: { color: 'rgba(255, 255, 255, 0.12)' },
+                    grid: { color: 'rgba(255, 255, 255, 0.12)' },
+                    pointLabels: { color: THEME.muted },
                     ticks: { display: false }
                 }
             },
             plugins: {
-                legend: { labels: { color: '#cfcbe6' } }
+                legend: { labels: { color: THEME.muted } }
             }
         }
     });
@@ -1224,14 +1336,14 @@ function renderTrackRecord() {
     renderTrackTable(rows);
 }
 
-const chartAxis = { ticks: { color: '#cfcbe6' }, grid: { color: 'rgba(255,255,255,0.08)' } };
+const chartAxis = { ticks: { color: THEME.muted }, grid: { color: THEME.grid } };
 
 function renderTrackBankroll(summary) {
     const canvas = document.getElementById('trBankrollChart');
     const empty = document.getElementById('tr-bankroll-empty');
     if (trBankrollChart) { trBankrollChart.destroy(); trBankrollChart = null; }
     const hasBets = summary.bets > 0;
-    canvas.hidden = !hasBets;
+    canvas.parentElement.hidden = !hasBets;
     empty.hidden = hasBets;
     if (!hasBets || typeof Chart === 'undefined') return;
     const labels = [...summary.curve.keys()];
@@ -1242,8 +1354,8 @@ function renderTrackBankroll(summary) {
             datasets: [{
                 label: 'Lucro acumulado (% da banca)',
                 data: labels.map(d => Number((summary.curve.get(d) * 100).toFixed(2))),
-                borderColor: '#a78bfa',
-                backgroundColor: 'rgba(167, 139, 250, 0.15)',
+                borderColor: THEME.accent,
+                backgroundColor: THEME.accentSoft,
                 fill: true,
                 tension: 0.25,
                 pointRadius: 2,
@@ -1251,7 +1363,7 @@ function renderTrackBankroll(summary) {
         },
         options: {
             responsive: true,
-            plugins: { legend: { labels: { color: '#cfcbe6' } } },
+            plugins: { legend: { labels: { color: THEME.muted } } },
             scales: { x: chartAxis, y: { ...chartAxis, ticks: { ...chartAxis.ticks, callback: v => `${v}%` } } }
         }
     });
@@ -1276,14 +1388,14 @@ function renderTrackCalibration(rows) {
         data: {
             labels: stats.map(s => `${s.label} (${s.n})`),
             datasets: [
-                { label: 'Confiança média prevista', data: stats.map(s => s.predicted), backgroundColor: 'rgba(167, 139, 250, 0.35)', borderColor: '#a78bfa', borderWidth: 1 },
-                { label: 'Acerto real', data: stats.map(s => s.actual), backgroundColor: 'rgba(74, 222, 128, 0.55)', borderColor: '#4ade80', borderWidth: 1 }
+                { label: 'Confiança média prevista', data: stats.map(s => s.predicted), backgroundColor: 'rgba(169, 164, 196, 0.4)', borderRadius: 4 },
+                { label: 'Acerto real', data: stats.map(s => s.actual), backgroundColor: THEME.pos, borderRadius: 4 }
             ]
         },
         options: {
             responsive: true,
             plugins: {
-                legend: { labels: { color: '#cfcbe6' } },
+                legend: { labels: { color: THEME.muted } },
                 tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y === null ? '—' : ctx.parsed.y.toFixed(1) + '%'}` } }
             },
             scales: { x: chartAxis, y: { ...chartAxis, min: 0, max: 100, ticks: { ...chartAxis.ticks, callback: v => `${v}%` } } }
@@ -1296,23 +1408,24 @@ function renderTrackTable(rows) {
     const sorted = [...rows].sort((a, b) => b.date.localeCompare(a.date));
     const visible = sorted.slice(0, trVisible);
     body.textContent = '';
-    const cell = (text, className = '') => {
+    const cell = (label, text, className = '') => {
         const td = document.createElement('td');
         td.textContent = text;
+        td.dataset.label = label; // no telemóvel a tabela vira cartões e isto é o rótulo
         if (className) td.className = className;
         return td;
     };
     visible.forEach(r => {
         const tr = document.createElement('tr');
-        tr.appendChild(cell(formatDatePt(r.date), 'tr-nowrap'));
-        tr.appendChild(cell([r.tourney, r.surface].filter(Boolean).join(' · ')));
-        tr.appendChild(cell(`${r.p1} vs ${r.p2}`));
-        tr.appendChild(cell(`${r.pick}${r.conf ? ` (${Number(r.conf).toFixed(1)}%)` : ''}`));
-        const result = cell(`${r.correct ? '✓ Acertou' : '✗ Falhou'}${r.score ? ` · ${r.score}` : ''}`, r.correct ? 'tr-ok' : 'tr-fail');
-        tr.appendChild(result);
-        tr.appendChild(cell(r.odd ? Number(r.odd).toFixed(2) : '—', 'tr-num'));
-        tr.appendChild(cell(r.stake > 0 ? pct(r.stake) : '—', 'tr-num'));
-        tr.appendChild(cell(r.stake > 0 ? signedPct(Number(r.profit) || 0) : '—',
+        tr.appendChild(cell('Data', formatDatePt(r.date), 'tr-nowrap'));
+        tr.appendChild(cell('Torneio', [r.tourney, r.surface].filter(Boolean).join(' · ')));
+        tr.appendChild(cell('Jogo', `${r.p1} vs ${r.p2}`, 'tr-game'));
+        tr.appendChild(cell('Previsão', `${r.pick}${r.conf ? ` (${Number(r.conf).toFixed(1)}%)` : ''}`));
+        tr.appendChild(cell('Resultado', `${r.correct ? '✓ Acertou' : '✗ Falhou'}${r.score ? ` · ${r.score}` : ''}`,
+            r.correct ? 'tr-ok' : 'tr-fail'));
+        tr.appendChild(cell('Odd', r.odd ? Number(r.odd).toFixed(2) : '–', 'tr-num'));
+        tr.appendChild(cell('Stake', r.stake > 0 ? pct(r.stake) : '–', 'tr-num'));
+        tr.appendChild(cell('Lucro', r.stake > 0 ? signedPct(Number(r.profit) || 0) : '–',
             `tr-num ${r.stake > 0 ? ((r.profit || 0) > 0 ? 'tr-ok' : 'tr-fail') : ''}`));
         body.appendChild(tr);
     });
@@ -1322,8 +1435,8 @@ function renderTrackTable(rows) {
     document.getElementById('tr-more').hidden = visible.length >= sorted.length;
 }
 
-// Pequena espera mínima só para evitar um "flash" do ecrã de loading
-// quando tudo carrega quase instantaneamente.
+// Splash de abertura (como o X): o logo fica parado enquanto a página e as previsões carregam,
+// com um mínimo para a animação de saída não parecer um piscar quando a app abre da cache.
 const minDelay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Se por algum motivo os dados nunca chegarem (rede em baixo, etc.),
@@ -1338,16 +1451,20 @@ const windowLoaded = new Promise(resolve => {
     else window.addEventListener('load', resolve, { once: true });
 });
 
-Promise.all([windowLoaded, readyOrTimeout, minDelay(2000)]).then(() => {
-    const loadingScreen = document.getElementById('loadingScreen');
-    if (!loadingScreen) return;
-
-    loadingScreen.addEventListener('animationend', () => loadingScreen.remove(), { once: true });
-    loadingScreen.classList.add('is-hidden');
+Promise.all([windowLoaded, readyOrTimeout, minDelay(700)]).then(() => {
+    const splash = document.getElementById('loadingScreen');
+    if (!splash) return;
 
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-        loadingScreen.remove();
+        splash.remove();
+        return;
     }
+    // animação de saída (CSS: encolhe e "explode") e remoção no fim; o timeout cobre o caso
+    // de o evento não disparar
+    const remove = () => splash.remove();
+    splash.addEventListener('animationend', event => { if (event.target === splash) remove(); });
+    setTimeout(remove, 900);
+    splash.classList.add('is-leaving');
 });
 
 // ==================== APP (PWA) ====================
