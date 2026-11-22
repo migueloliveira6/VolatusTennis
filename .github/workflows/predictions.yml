@@ -7,6 +7,11 @@ on:
 permissions:
   contents: write
 
+# Mesmo grupo do check_new_matches.yml: os dois nunca escrevem no gh-pages ao mesmo tempo
+concurrency:
+  group: site-deploy
+  cancel-in-progress: false
+
 jobs:
   generate-predictions:
     runs-on: ubuntu-latest

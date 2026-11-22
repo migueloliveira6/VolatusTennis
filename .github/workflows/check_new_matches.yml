@@ -1,0 +1,61 @@
+name: Check New Matches
+
+# Corre ~6h depois do workflow principal (cron-job.org → repository_dispatch, ~04:50 UTC).
+# Procura jogos do dia publicado que só apareceram no TennisExplorer depois do run das 22:53,
+# prevê-os e acrescenta-os ao gh-pages (predictions.json + snapshot do dia).
+on:
+  repository_dispatch:
+    types: [check-new-matches]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+# Mesmo grupo do predictions.yml: os dois nunca escrevem no gh-pages ao mesmo tempo
+concurrency:
+  group: site-deploy
+  cancel-in-progress: false
+
+jobs:
+  check-new-matches:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      TOKEN_BOT: ${{ secrets.TOKEN_BOT }}
+      CHAT_ID: ${{ secrets.CHAT_ID }}
+      MODEL_PATH: ${{ secrets.MODEL_PATH }}
+      NAME_LOOKUP: ${{ vars.NAME_LOOKUP }}
+
+    steps:
+      - name: Checkout main (código e modelo)
+        uses: actions/checkout@v4
+
+      - name: Checkout gh-pages (site publicado)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: site
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Procurar e prever jogos novos
+        id: check
+        run: python src/check_new_matches.py --site-dir site
+
+      - name: Publicar jogos novos no gh-pages
+        if: steps.check.outputs.has_new == 'true'
+        working-directory: site
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add predicts/
+          git commit -m "Jogos novos acrescentados às previsões do dia"
+          git push origin HEAD:gh-pages
