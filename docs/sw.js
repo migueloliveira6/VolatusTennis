@@ -9,15 +9,15 @@
  * e subir VERSION. A página mostra "Há uma versão nova" quando o service worker novo
  * fica à espera.
  */
-const VERSION = 'v2';
+const VERSION = 'v4';
 const SHELL_CACHE = `volatus-shell-${VERSION}`;
 const DATA_CACHE = 'volatus-data';
 
 const SHELL = [
     './',
     'index.html',
-    'css/styles.css?v=1',
-    'js/app.js?v=2',
+    'css/styles.css?v=3',
+    'js/app.js?v=4',
     'fonts/Sakana.ttf',
     'favicon.ico',
     'site.webmanifest',
