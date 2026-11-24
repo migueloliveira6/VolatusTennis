@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verificador de jogos novos (corre ~6h depois do workflow principal).
 
-Alguns jogos do dia só aparecem no TennisExplorer depois de o workflow principal correr
+Alguns jogos do dia só aparecem no BetExplorer depois de o workflow principal correr
 (a ronda anterior acaba tarde). Este script procura, para o dia já publicado no site, jogos
 com odds que ainda não começaram e que não estão no predictions.json, prevê só esses e
 acrescenta-os ao predictions.json e ao snapshot do dia (que o comparador usa no dia seguinte).

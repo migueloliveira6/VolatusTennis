@@ -2,7 +2,6 @@ import json
 from datetime import date
 
 import pytest
-from bs4 import BeautifulSoup
 
 import check_new_matches as cnm
 from engine import Jogo, NeuroTennis
@@ -110,23 +109,6 @@ def test_past_date_is_skipped_without_scraping(tmp_path):
     assert not resumo['has_new'] and scraper.datas == []
 
 
-def _linhas(html):
-    return BeautifulSoup(html, 'html.parser').find_all('tr')
-
-
-def test_jogo_iniciado_reads_result_and_score_cells():
-    # estrutura real do TennisExplorer (22/11/2026)
-    por_comecar = _linhas('<table><tr><td class="t-name">A</td><td class="result"></td><td class="score"></td></tr>'
-                          '<tr><td class="t-name">B</td><td class="result"></td><td class="score">\xa0</td></tr></table>')
-    terminado = _linhas('<table><tr><td class="t-name">A</td><td class="result">2</td><td class="score">6</td></tr>'
-                        '<tr><td class="t-name">B</td><td class="result">0</td><td class="score">2</td></tr></table>')
-    ao_vivo = _linhas('<table><tr><td class="t-name">A</td><td class="result"></td><td class="score">3</td></tr>'
-                      '<tr><td class="t-name">B</td><td class="result"></td><td class="score">2</td></tr></table>')
-    assert not NeuroTennis._jogo_iniciado(*por_comecar)
-    assert NeuroTennis._jogo_iniciado(*terminado)
-    assert NeuroTennis._jogo_iniciado(*ao_vivo)
-
-
 def test_url_uses_explicit_date():
     url = NeuroTennis(timeout=5)._construir_url(data_alvo=date(2026, 11, 23))
-    assert 'year=2026&month=11&day=23' in url
+    assert url == 'https://www.betexplorer.com/tennis/next/?year=2026&month=11&day=23'
