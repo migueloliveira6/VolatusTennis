@@ -1,7 +1,7 @@
 name: Check New Matches
 
 # Corre ~6h depois do workflow principal (cron-job.org → repository_dispatch, ~04:50 UTC).
-# Procura jogos do dia publicado que só apareceram no TennisExplorer depois do run das 22:53,
+# Procura jogos do dia publicado que só apareceram no BetExplorer depois do run das 22:53,
 # prevê-os e acrescenta-os ao gh-pages (predictions.json + snapshot do dia).
 on:
   repository_dispatch:

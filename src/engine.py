@@ -14,12 +14,12 @@ from datetime import date, datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 import re
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from name_lookup import apply_name_lookup
+from name_lookup import apply_name_lookup  # noqa: F401 (usado por outros módulos via engine)
+from betexplorer import BetExplorerClient, converter_nome, url_dia
 
 # Configuração de logging
 logging.basicConfig(
@@ -36,71 +36,6 @@ MODEL_PATH = os.getenv('MODEL_PATH', 'models')
 PREVISOES_PATH = os.getenv('PREVISOES_PATH', 'previsoes')
 NAME_LOOKUP = os.getenv('NAME_LOOKUP', 'notebooks/name_lookup.csv')
 SITE_STATUS_PATH = os.getenv('SITE_STATUS_PATH', os.path.join('docs', 'predicts', 'status.json'))
-# Cache global para nomes de jogadores
-nome_cache = {}
-
-# ============================================================================
-# FUNÇÕES AUXILIARES
-# ============================================================================
-
-def getPlayersFullName(playerUrl: str) -> str:
-    """
-    Obtém o nome completo do jogador com cache
-    
-    Args:
-        playerUrl: URL relativa do jogador
-        
-    Returns:
-        Nome completo normalizado do jogador
-    """
-    if playerUrl in nome_cache:
-        return nome_cache[playerUrl]
-    
-    try:
-        player_url = "https://www.tennisexplorer.com" + playerUrl
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-        }
-        
-        player_response = requests.get(player_url, headers=headers, timeout=10)
-        player_response.raise_for_status()
-        
-        player_soup = BeautifulSoup(player_response.content, "html.parser")
-        player_table = player_soup.find("table", {"class": "plDetail"})
-        
-        if not player_table:
-            nome_cache[playerUrl] = "Unknown"
-            return "Unknown"
-            
-        player_table_body = player_table.find("tbody")
-        player_name = player_table_body.find_all("h3")
-        
-        if not player_name:
-            nome_cache[playerUrl] = "Unknown"
-            return "Unknown"
-            
-        name = " ".join(player_name[0].text.split())
-        splitname = name.split(" ")
-        
-        if len(splitname) >= 2:
-            first_name = splitname[-1]
-            last_name = name.replace(" " + first_name, "")
-            name = first_name + " " + last_name
-        
-        name = name.strip().replace("-", " ")
-
-        # Correções de nomes (name_lookup.csv), iguais às aplicadas aos resultados
-        name = apply_name_lookup(name, NAME_LOOKUP)
-
-        nome_cache[playerUrl] = name
-        return name
-        
-    except Exception as e:
-        logger.warning(f"Erro ao extrair nome do jogador {playerUrl}: {e}")
-        nome_cache[playerUrl] = "Unknown"
-        return "Unknown"
-
-
 # ============================================================================
 # CLASSES DE DADOS
 # ============================================================================
@@ -112,7 +47,8 @@ class Jogo:
     player2: str
     odd1: Optional[float]
     odd2: Optional[float]
-    iniciado: bool = False  # já tem resultado ou parciais (ao vivo ou terminado)
+    iniciado: bool = False  # terminado, ou a hora marcada já passou (pode estar ao vivo)
+    superficie: Optional[str] = None  # piso indicado pelo BetExplorer no cabeçalho do torneio
 
     def __str__(self):
         odds_info = f" (Odds: {self.odd1} vs {self.odd2})" if self.odd1 and self.odd2 else ""
@@ -158,228 +94,89 @@ class ResultadoPrevisao:
 # ============================================================================
 
 class NeuroTennis:
-    """Classe otimizada para scraping do Tennis Explorer"""
-    
+    """Jogos ATP de singulares de um dia, lidos do BetExplorer (ver src/betexplorer.py)."""
+
     BLACKLIST_TORNEIO = frozenset({
-        "itf", "utr", "junior", "exhibition", "boodles tennis challenge", 
+        "itf", "utr", "junior", "exhibition", "boodles tennis challenge",
         "boodles tennis cup", "boodles tennis series", "series",
         "pro", "match", "world university games", "challenger", "ultimate tennis"
     })
-    
+
     BLACKLIST_NOMES = frozenset({
-        "challenger", "itf", "wta", "utr", "series", "pro", "match", "cup", 
-        "junior", "wimbledon", "french", "us open", "australian", "masters", 
-        "finals", "exhibition", "eastbourne", "miami", "indian wells", "paris", 
-        "rome", "shanghai", "tokyo", "beijing", "doha", "dubai", "sydney", 
-        "montreal", "cincinnati", "stuttgart", "birmingham", "brussels", 
-        "istanbul", "moscow", "st petersburg", "basel", "rotterdam", 
+        "challenger", "itf", "wta", "utr", "series", "pro", "match", "cup",
+        "junior", "wimbledon", "french", "us open", "australian", "masters",
+        "finals", "exhibition", "eastbourne", "miami", "indian wells", "paris",
+        "rome", "shanghai", "tokyo", "beijing", "doha", "dubai", "sydney",
+        "montreal", "cincinnati", "stuttgart", "birmingham", "brussels",
+        "istanbul", "moscow", "st petersburg", "basel", "rotterdam",
         "hamburg", "vienna", "london"
     })
-    
-    HEADERS = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "pt-BR,pt;q=0.8,en;q=0.5",
-        "Connection": "keep-alive"
-    }
-    
-    def __init__(self, timeout: int = 10):
+
+    def __init__(self, timeout: int = 10, cliente: Optional[BetExplorerClient] = None):
         self.timeout = timeout
-        self.session = requests.Session()
-        self.session.headers.update(self.HEADERS)
+        self.cliente = cliente or BetExplorerClient(timeout=timeout, lookup_path=NAME_LOOKUP)
         logger.info("🚀 NeuroTennis inicializado!")
-    
+
     def _is_atp_torneio(self, nome: str) -> bool:
         """Verifica se é um torneio ATP válido"""
         if not nome:
             return False
         nome_lower = nome.lower()
         return not any(blacklisted in nome_lower for blacklisted in self.BLACKLIST_TORNEIO)
-    
+
     def _is_nome_valido(self, nome: str) -> bool:
         """Verifica se o nome do jogador é válido"""
         if not nome or len(nome.split()) > 5:
             return False
         nome_lower = nome.lower()
         return not any(blocked in nome_lower for blocked in self.BLACKLIST_NOMES)
-    
-    def _limpar_nome_jogador(self, nome_bruto: str) -> str:
-        """Limpa o nome do jogador removendo seeds e iniciais"""
-        if not nome_bruto:
-            return ""
-        nome = re.sub(r'\([^)]*\)', '', nome_bruto)
-        nome = re.sub(r'\b[A-Z]\.\s*', '', nome)
-        return ' '.join(nome.split()).strip()
-    
-    def _extrair_odds(self, linha) -> Tuple[Optional[float], Optional[float]]:
-        """Extrai as odds de uma linha"""
-        try:
-            odds_elements = linha.find_all("td", class_=["course", "coursew"])
-            if len(odds_elements) < 2:
-                return None, None
-            
-            if "coursew" in odds_elements[0].get("class", []):
-                odd1 = float(odds_elements[0].get_text(strip=True))
-                odd2 = float(odds_elements[1].get_text(strip=True))
-            elif "coursew" in odds_elements[1].get("class", []):
-                odd1 = float(odds_elements[1].get_text(strip=True))
-                odd2 = float(odds_elements[0].get_text(strip=True))
-            else:
-                odd1 = float(odds_elements[0].get_text(strip=True))
-                odd2 = float(odds_elements[1].get_text(strip=True))
-            
-            return odd1, odd2
-        except (ValueError, AttributeError, IndexError) as e:
-            logger.debug(f"Erro ao extrair odds: {e}")
-            return None, None
-    
-    def _processar_par_jogadores(self, linha1, linha2, torneio_atual: str) -> Optional[Jogo]:
-        """Processa um par de linhas para extrair informações dos jogadores"""
-        try:
-            jogador1_td = linha1.find("td", class_="t-name")
-            jogador2_td = linha2.find("td", class_="t-name")
-            
-            if not all([jogador1_td, jogador2_td, jogador1_td.a, jogador2_td.a]):
-                return None
-            
-            href1 = jogador1_td.a.get("href", "")
-            href2 = jogador2_td.a.get("href", "")
-            nome_bruto1 = jogador1_td.get_text(strip=True)
-            nome_limpo1 = self._limpar_nome_jogador(nome_bruto1)
-            nome_bruto2 = jogador2_td.get_text(strip=True)
-            nome_limpo2 = self._limpar_nome_jogador(nome_bruto2)
-            
-            if not (self._is_nome_valido(nome_limpo1) and self._is_nome_valido(nome_limpo2)):
-                return None
-            
-            odd1, odd2 = self._extrair_odds(linha1)
-            jogador1 = getPlayersFullName(href1)
-            jogador2 = getPlayersFullName(href2)
 
-            return Jogo(
-                player1=jogador1,
-                player2=jogador2,
-                odd1=odd1,
-                odd2=odd2,
-                iniciado=self._jogo_iniciado(linha1, linha2)
-            )
-        except Exception as e:
-            logger.warning(f"Erro ao processar par de jogadores: {e}")
-            return None
-    
     @staticmethod
-    def _jogo_iniciado(linha1, linha2) -> bool:
-        """True se o jogo já começou: resultado ou parciais preenchidos em alguma das linhas.
-
-        Jogos por começar têm as células 'result'/'score' vazias (ou a coluna 'nbr').
-        """
-        for linha in (linha1, linha2):
-            for td in linha.find_all("td", class_=["result", "score"]):
-                if td.get_text(strip=True).replace("\xa0", ""):
-                    return True
-        return False
+    def _data_alvo(dias_offset: int = 1, data_alvo: Optional[date] = None) -> date:
+        return data_alvo or (datetime.today() + timedelta(days=dias_offset)).date()
 
     def _construir_url(self, dias_offset: int = 1, data_alvo: Optional[date] = None) -> str:
-        """Constrói a URL para scraping (data explícita ou hoje + dias_offset)"""
-        data_target = data_alvo or (datetime.today() + timedelta(days=dias_offset))
-        return (f"https://www.tennisexplorer.com/matches/"
-                f"?type=atp-single&year={data_target.year}"
-                f"&month={data_target.month:02d}"
-                f"&day={data_target.day:02d}")
-    
-    def _extrair_nome_torneio(self, linha) -> Optional[str]:
-        """Extrai o nome do torneio de uma linha de cabeçalho"""
-        try:
-            td_nome = linha.find("td", class_="t-name")
-            if td_nome and td_nome.a:
-                nome_torneio = td_nome.a.get_text(strip=True)
-                if nome_torneio == "Tampere challenger":
-                    return None
-                if self._is_atp_torneio(nome_torneio):
-                    return nome_torneio
-            return None
-        except Exception as e:
-            logger.debug(f"Erro ao extrair nome do torneio: {e}")
-            return None
-    
+        """URL da lista de jogos do dia (data explícita ou hoje + dias_offset)"""
+        return url_dia("next", self._data_alvo(dias_offset, data_alvo))
+
     def extrair_jogos_agrupados_por_torneio(self, dias_offset: int = 1,
                                             data_alvo: Optional[date] = None) -> Dict[str, List[Jogo]]:
-        """Extrai jogos agrupados por torneio (de hoje + dias_offset, ou de data_alvo)"""
-        url = self._construir_url(dias_offset, data_alvo)
-        logger.info(f"📅 URL sendo acessada: {url}")
-        
+        """Jogos ATP de singulares agrupados por torneio (de hoje + dias_offset, ou de data_alvo)"""
+        dia = self._data_alvo(dias_offset, data_alvo)
         try:
-            response = self.session.get(url, timeout=self.timeout)
-            response.raise_for_status()
-            
-            soup = BeautifulSoup(response.text, "html.parser")
-            tabelas = soup.select("table.result")
-            
-            if not tabelas:
-                logger.warning("⚠️ Nenhuma tabela encontrada.")
-                return {}
-            
-            torneios = {}
-            torneio_atual = None
-            
-            for tabela in tabelas:
-                linhas = tabela.select("tr")
-                i = 0
-                
-                while i < len(linhas):
-                    linha = linhas[i]
-                    classes_linha = linha.get("class", [])
-                    
-                    if "head" in classes_linha and "flags" in classes_linha:
-                        torneio_atual = self._extrair_nome_torneio(linha)
-                        if torneio_atual:
-                            torneios.setdefault(torneio_atual, [])
-                            logger.info(f"🏟️ Torneio encontrado: {torneio_atual}")
-                        i += 1
-                        continue
-                    
-                    if torneio_atual and i + 1 < len(linhas):
-                        linha_atual = linhas[i]
-                        linha_seguinte = linhas[i + 1]
-                        
-                        tem_jogador_atual = linha_atual.find("td", class_="t-name") is not None
-                        tem_jogador_seguinte = linha_seguinte.find("td", class_="t-name") is not None
-                        
-                        classes_atual = linha_atual.get("class", [])
-                        classes_seguinte = linha_seguinte.get("class", [])
-                        eh_header_atual = "head" in classes_atual or "flags" in classes_atual
-                        eh_header_seguinte = "head" in classes_seguinte or "flags" in classes_seguinte
-                        
-                        if (tem_jogador_atual and tem_jogador_seguinte and 
-                            not eh_header_atual and not eh_header_seguinte):
-                            
-                            jogo = self._processar_par_jogadores(linha_atual, linha_seguinte, torneio_atual)
-                            
-                            if jogo:
-                                torneios[torneio_atual].append(jogo)
-                                i += 2
-                            else:
-                                i += 2
-                        else:
-                            i += 1
-                    else:
-                        i += 1
-            
-            torneios = {k: v for k, v in torneios.items() if v}
-            logger.info(f"✅ Total de torneios encontrados: {len(torneios)}")
-            return torneios
-            
+            lista = self.cliente.jogos_do_dia(dia, "next")
         except requests.RequestException as e:
             logger.error(f"❌ Erro na requisição HTTP: {e}")
             return {}
         except Exception as e:
             logger.error(f"❌ Erro inesperado: {e}")
             return {}
-    
+
+        torneios: Dict[str, List[Jogo]] = {}
+        for item in lista:
+            if not self._is_atp_torneio(item.torneio):
+                continue
+            if not (self._is_nome_valido(item.casa) and self._is_nome_valido(item.fora)):
+                continue
+            if item.torneio not in torneios:
+                logger.info(f"🏟️ Torneio encontrado: {item.torneio}")
+            jogador1, jogador2 = self.cliente.nomes_completos(item)
+            torneios.setdefault(item.torneio, []).append(Jogo(
+                player1=jogador1,
+                player2=jogador2,
+                odd1=item.odd_casa,
+                odd2=item.odd_fora,
+                iniciado=item.iniciado,
+                superficie=item.superficie,
+            ))
+
+        logger.info(f"✅ Total de torneios encontrados: {len(torneios)}")
+        return torneios
+
     def __del__(self):
         """Limpa recursos ao destruir o objeto"""
-        if hasattr(self, 'session'):
-            self.session.close()
+        if hasattr(self, 'cliente'):
+            self.cliente.close()
 
 
 # ============================================================================
@@ -515,11 +312,12 @@ MASTERS_1000 = ("indian wells", "miami", "monte carlo", "madrid", "rome", "toron
 
 
 def inferir_nivel_torneio(nome_torneio: str) -> str:
-    """Converte o nome do torneio (TennisExplorer, ATP singles) no código de nível do Sackmann."""
+    """Converte o nome do torneio (BetExplorer, ATP singles) no código de nível do Sackmann."""
     nome = (nome_torneio or "").lower()
     if any(gs in nome for gs in GRAND_SLAMS):
         return "G"
-    if "atp finals" in nome or "masters cup" in nome:
+    # ATP Finals: "Finals - Turin" no BetExplorer (o Next Gen Finals não conta)
+    if "atp finals" in nome or "masters cup" in nome or nome.startswith("finals"):
         return "F"
     if "davis cup" in nome:
         return "D"
@@ -575,7 +373,7 @@ class TennisPredicaoAnalyzer:
             if not all([p1, p2, odd1, odd2]):
                 return None
             
-            superficie = self.superficie_detector.detectar_superficie(torneio, data)
+            superficie = (jogo.get("superficie") if isinstance(jogo, dict) else getattr(jogo, "superficie", None))                 or self.superficie_detector.detectar_superficie(torneio, data)
             nivel = inferir_nivel_torneio(torneio)
             winner, prob, detalhes = self.predictor.predict_match(
                 p1, p2, superficie, date=data, tourney_level=nivel

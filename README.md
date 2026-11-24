@@ -80,7 +80,7 @@ Os avisos diários das previsões chegam pelo canal do Telegram (botão **Telegr
  │  compare_predictions_results.py  (previsões de ontem      │
  │        │                          vs. resultados reais)   │
  │        ▼                                                  │
- │  engine.py  (TennisExplorer: jogos + odds de amanhã       │
+ │  engine.py  (BetExplorer: jogos + odds de amanhã          │
  │        │     → previsões → Telegram)                      │
  │        ▼                                                  │
  │  generate_predictions.py · generate_analytics.py          │
@@ -129,7 +129,7 @@ Crie um ficheiro `.env` na raiz (não vai para o git):
 | `MODEL_PATH` | Pasta dos modelos | `models` |
 | `PREVISOES_PATH` | Pasta dos CSV de previsões e comparações | `previsoes` |
 | `CSV_PATH` | CSV de jogos novos para o `update_from_csv.py` | `datasets/dataset_2026_normalizado_v5.csv` |
-| `NAME_LOOKUP` | Mapeamento de nomes TennisExplorer → Sackmann | `notebooks/name_lookup.csv` |
+| `NAME_LOOKUP` | Mapeamento de nomes BetExplorer → Sackmann | `notebooks/name_lookup.csv` |
 | `TOKEN_BOT`, `CHAT_ID` | Bot do Telegram (opcional) | — |
 | `PREDICTIONS_JSON_URL` | `predictions.json` publicado (fallback do compare) | — |
 | `KELLY_FRACTION`, `MIN_EDGE`, `MAX_STAKE` | Gestão de banca | `0.25`, `0.02`, `0.05` |
@@ -289,11 +289,11 @@ O workflow `.github/workflows/predictions.yml` corre todos os dias. É disparado
 
 1. Restaura do branch `gh-pages` o estado acumulado: `docs/analytics/*.json` (estatísticas e histórico) e os snapshots `docs/predicts/history/`.
 2. **Compara** as previsões de ontem (snapshot do dia) com os resultados reais.
-3. **Faz scraping** dos jogos e odds de amanhã no TennisExplorer, **gera as previsões** com o modelo em `models/` e **envia-as para o Telegram**.
+3. **Faz scraping** dos jogos e odds de amanhã no BetExplorer, **gera as previsões** com o modelo em `models/` e **envia-as para o Telegram**.
 4. Gera `docs/predicts/predictions.json` e atualiza as estatísticas e o `track_record.json`.
 5. Guarda o snapshot do dia e publica `docs/` no `gh-pages`, que serve [volatustennis.me](https://volatustennis.me).
 
-Cerca de 6h depois (~04:50 UTC) corre um segundo workflow, `.github/workflows/check_new_matches.yml`, disparado pelo cron-job.org com o `event_type` `check-new-matches`. Alguns jogos do dia só aparecem no TennisExplorer depois do run principal (a ronda anterior acaba tarde). Este workflow procura jogos com odds, ainda por começar, que não estejam no site, prevê só esses e acrescenta-os às previsões e ao snapshot do dia. Envia ainda uma mensagem no Telegram só com os jogos novos. Para testar localmente sem escrever nem enviar nada:
+Cerca de 6h depois (~04:50 UTC) corre um segundo workflow, `.github/workflows/check_new_matches.yml`, disparado pelo cron-job.org com o `event_type` `check-new-matches`. Alguns jogos do dia só aparecem no BetExplorer depois do run principal (a ronda anterior acaba tarde). Este workflow procura jogos com odds, ainda por começar, que não estejam no site, prevê só esses e acrescenta-os às previsões e ao snapshot do dia. Envia ainda uma mensagem no Telegram só com os jogos novos. Para testar localmente sem escrever nem enviar nada:
 
 ```bash
 python src/check_new_matches.py --site-dir <pasta com o gh-pages> --dry-run
@@ -404,7 +404,7 @@ O código, os comentários e as colunas de dados estão em português; mantenha 
 ## Agradecimentos e contacto
 
 - [Jeff Sackmann / tennis_atp](https://github.com/JeffSackmann/tennis_atp) e [Tennis Abstract](https://www.tennisabstract.com/): dados históricos ATP
-- [TennisExplorer](https://www.tennisexplorer.com/): jogos e odds do dia
+- [BetExplorer](https://www.betexplorer.com/tennis/): jogos, odds e resultados do dia (até 11/2026 o TennisExplorer, que fecha a 16/12/2026)
 - [XGBoost](https://xgboost.readthedocs.io/), [Optuna](https://optuna.org/), [scikit-learn](https://scikit-learn.org/), [Chart.js](https://www.chartjs.org/)
 
 **LinkedIn:** [luis-oliveira6](https://www.linkedin.com/in/luis-oliveira6) · **Site:** [volatustennis.me](https://volatustennis.me) · **Repositório:** [github.com/migueloliveira6/VolatusTennis](https://github.com/migueloliveira6/VolatusTennis)

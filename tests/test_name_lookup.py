@@ -1,7 +1,7 @@
 import pandas as pd
 
+import betexplorer
 import name_lookup
-import scraper_results
 
 
 def _lookup_file(tmp_path):
@@ -23,17 +23,10 @@ def test_missing_lookup_file_keeps_names(tmp_path):
     assert name_lookup.apply_name_lookup('Taylor Fritz', str(tmp_path / 'nao_existe.csv')) == 'Taylor Fritz'
 
 
-class _FakeResponse:
-    content = b'<table class="plDetail"><tbody><tr><td><h3>Tirante Thiago Agustin</h3></td></tr></tbody></table>'
-
-    def raise_for_status(self):
-        pass
-
-
 def test_results_scraper_applies_same_lookup_as_predictions(tmp_path, monkeypatch):
     """Caso real de 14/11/2026: o resultado tem de sair com o nome corrigido, igual à previsão."""
-    monkeypatch.setenv('NAME_LOOKUP', _lookup_file(tmp_path))
-    monkeypatch.setattr(scraper_results.requests, 'get', lambda *a, **k: _FakeResponse())
-    scraper_results.nome_cache.clear()
-
-    assert scraper_results.getPlayersFullName('/player/tirante/') == 'Thiago Agustin Tirante'
+    lookup = _lookup_file(tmp_path)
+    monkeypatch.setenv('NAME_LOOKUP', lookup)
+    # resultados (caminho do ambiente) e previsões (caminho explícito) dão o mesmo nome
+    assert betexplorer.converter_nome('Tirante Thiago Agustin') == 'Thiago Agustin Tirante'
+    assert betexplorer.converter_nome('Tirante Thiago Agustin', lookup) == 'Thiago Agustin Tirante'
