@@ -1,0 +1,30 @@
+[
+    {
+        "Torneio": "Davis Cup",
+        "Jogador 1": "Flavio Cobolli",
+        "Jogador 2": "Jiri Lehecka",
+        "Vencedor Previsto": "Jiri Lehecka",
+        "Confiança (%)": 58.3,
+        "ELO Diff": -24.2,
+        "H2H": "0-1 (0% para Flavio Cobolli)",
+        "Odd 1": 2.99,
+        "Odd 2": 1.38,
+        "Superfície": "Hard",
+        "Valor Aposta": 0,
+        "ROI Esperado (%)": 0
+    },
+    {
+        "Torneio": "Davis Cup",
+        "Jogador 1": "Lorenzo Musetti",
+        "Jogador 2": "Jakub Mensik",
+        "Vencedor Previsto": "Lorenzo Musetti",
+        "Confiança (%)": 52.2,
+        "ELO Diff": 74.6,
+        "H2H": "1-0 (100% para Lorenzo Musetti)",
+        "Odd 1": 1.58,
+        "Odd 2": 2.34,
+        "Superfície": "Hard",
+        "Valor Aposta": 0,
+        "ROI Esperado (%)": 0
+    }
+]
